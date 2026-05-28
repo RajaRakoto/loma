@@ -1,6 +1,189 @@
 {
+	"dev": {
+		"parent-title": "DEVELOPMENT GUIDELINES",
+		"think-before-coding": {
+			"title": "Think Before Coding",
+			"body": [
+				{ "intro": "Before implementing:" },
+				{
+					"items": [
+						"State your assumptions explicitly. If uncertain, ask.",
+						"If multiple interpretations exist, present them — don't pick silently.",
+						"If a simpler approach exists, say so. Push back when warranted.",
+						"If something is unclear, stop. Name what's confusing. Ask.",
+						"Analyze and understand the existing project architecture before making changes.",
+						"Respect existing conventions and design patterns; avoid introducing regressions or inconsistent abstractions."
+					]
+				}
+			]
+		},
+		"simplicity-first": {
+			"title": "Simplicity First",
+			"body": [
+				{
+					"items": [
+						"No features beyond what was asked (YAGNI).",
+						"No abstractions for single-use code.",
+						"No \"flexibility\" or \"configurability\" that wasn't requested.",
+						"No error handling for impossible scenarios.",
+						"If you write 200 lines and it could be 50, rewrite it."
+					]
+				},
+				{
+					"note": "Ask yourself: \"Would a senior engineer say this is overcomplicated?\" If yes, simplify. Prefer simple, maintainable, predictable, and non-breaking solutions — KISS (Keep It Simple, Stupid). Use reusable abstractions only when justified by real duplication or maintenance benefits — DRY (Don't Repeat Yourself), SOLID. Never build for hypothetical future needs — YAGNI (You Aren't Gonna Need It).."
+				}
+			]
+		},
+		"surgical-changes": {
+			"title": "Surgical Changes",
+			"body": [
+				{ "intro": "When editing existing code:" },
+				{
+					"items": [
+						"Don't \"improve\" adjacent code, comments, or formatting.",
+						"Don't refactor things that aren't broken.",
+						"Match existing style, even if you'd do it differently.",
+						"If you notice unrelated dead code, mention it — don't delete it.",
+						"Prefer incremental changes and maintain backward compatibility unless explicitly instructed otherwise."
+					]
+				},
+				{ "intro": "When your changes create orphans:" },
+				{
+					"items": [
+						"Remove imports/variables/functions that YOUR changes made unused.",
+						"Don't remove pre-existing dead code unless asked."
+					]
+				},
+				{
+					"note": "The test: every changed line should trace directly to the user's request."
+				}
+			]
+		},
+		"goal-driven-execution": {
+			"title": "Goal-Driven Execution",
+			"body": [
+				{ "intro": "Transform tasks into verifiable goals:" },
+				{
+					"items": [
+						"\"Add validation\" → \"Write tests for invalid inputs, then make them pass\"",
+						"\"Fix the bug\" → \"Write a test that reproduces it, then make it pass\"",
+						"\"Refactor X\" → \"Ensure tests pass before and after\""
+					]
+				},
+				{
+					"note": "For multi-step tasks, state a brief plan with explicit verify steps. Strong success criteria let you loop independently. Weak criteria (\"make it work\") require constant clarification."
+				}
+			]
+		},
+		"development-efficiency": {
+			"title": "Development Efficiency",
+			"body": [
+				{
+					"items": [
+						"Use RTK (Rust Token Kill) aggressively during vibe coding sessions to reduce unnecessary token usage.",
+						"Prefer concise, high-signal communication and implementation steps.",
+						"Keep modules focused, readable, and easy to maintain.",
+						"Centralize business logic in shared/core layers whenever possible.",
+						"Avoid duplicating validation, parsing, or transformation logic across layers."
+					]
+				}
+			]
+		},
+		"language-code-standards": {
+			"title": "Language & Code Standards",
+			"body": [
+				{
+					"items": [
+						"Use RTK (Rust Token Kill) aggressively during vibe coding sessions to reduce unnecessary token usage and optimize development efficiency.",
+						"Before implementing any feature, always analyze and understand the existing project architecture to avoid regressions, inconsistent abstractions, or conflicting design patterns.",
+						"The project may also include other languages, tooling, scripting environments, or paradigms. Respect and follow the established conventions, architecture, and best practices of each language or ecosystem used in the repository."
+					]
+				},
+				{ "intro": "Follow naming conventions strictly:" },
+				{
+					"items": [
+						"`camelCase` for functions",
+						"`camelCase` for variables, fields, parameters, and local bindings",
+						"`kebab-case` for modules and filenames",
+						"`snake_case` for database tables and collections",
+						"`PascalCase` for structs, enums, traits, classes, and exported types",
+						"`SCREAMING_SNAKE_CASE` for constants and compile-time values"
+					]
+				},
+				{
+					"note": "Vibe coding sessions: AI explanations and responses must be in French. Code, comments, commit messages, and docs remain in English without exception."
+				}
+			]
+		},
+		"testing-guidelines": {
+			"title": "Testing Guidelines",
+			"body": [
+				{
+					"items": [
+						"Write tests for: bug fixes, business logic, edge cases, public APIs, integration behavior.",
+						"Skip tests for: trivial getters/setters, pass-through wrappers, static config objects.",
+						"Bug fix workflow: reproduce → write failing test → implement fix → verify pass.",
+						"Style: FIRST principles · AAA structure · synchronous unless async is the subject · deterministic · tests close to source.",
+						"Mocking: mock external APIs, databases, filesystem. Don't mock internal utilities, standard libraries, or core framework behavior."
+					]
+				}
+			]
+		}
+	},
+	"git": {
+		"parent-title": "GIT",
+		"identity": {
+			"title": "Required Git Identity",
+			"body": [
+				{
+					"items": [
+						"Always maintain a clean, professional, and human-looking Git history.",
+						"Never use \"Claude\", \"Anthropic\", AI-related identities, or AI-generated signatures in Git authorship, commit metadata, contributors, or co-authors."
+					]
+				}
+			]
+		},
+		"commit-rules": {
+			"title": "Commit Rules",
+			"body": [
+				{
+					"items": [
+						"Before every commit: verify the current Git identity and correct any invalid configuration.",
+						"Analyze all changed files before committing.",
+						"Group related modifications into logical, coherent commits; separate unrelated changes into different commits.",
+						"Avoid oversized or mixed-purpose commits.",
+						"Prefer atomic commits with clear scope: `feature`, `fix`, `refactor`, `docs`, `config`, `test`."
+					]
+				}
+			]
+		},
+		"validation-before-merge": {
+			"title": "Validation Before Merge",
+			"body": [
+				{
+					"items": [
+						"Run tests and type checking.",
+						"Review for regressions and breaking changes.",
+						"Ensure consistency with existing architecture and conventions.",
+						"Update documentation when necessary."
+					]
+				}
+			]
+		},
+		"documentation-guidelines": {
+			"title": "Documentation Guidelines",
+			"body": [
+				{
+					"items": [
+						"Keep documentation close to the project source, concise, practical, and up to date.",
+						"Prefer maintainable and versioned documentation structures."
+					]
+				}
+			]
+		}
+	},
 	"stacks": {
-		"title": "Stack & Ecosystem",
+		"parent-title": "STACK & ECOSYSTEM",
 		"runtime-tooling": {
 			"title": "Runtime & Tooling",
 			"bun": {
@@ -45,11 +228,15 @@
 			"react-patterns": {
 				"title": "React Best Practices",
 				"body": [
-					"Component-based architecture with reusable UI units.",
-					"Prefer functional components with hooks.",
-					"Keep components small and feature-oriented.",
-					"Avoid unnecessary re-renders using memoization.",
-					"Use composition over inheritance."
+					{
+						"items": [
+							"Component-based architecture with reusable UI units.",
+							"Prefer functional components with hooks.",
+							"Keep components small and feature-oriented.",
+							"Avoid unnecessary re-renders using memoization.",
+							"Use composition over inheritance."
+						]
+					}
 				]
 			},
 			"react-state": {
@@ -57,23 +244,31 @@
 				"zustand": {
 					"title": "Zustand",
 					"body": [
-						"Use for simple, fast, and minimal global state needs.",
-						"Keep stores small and focused on a single domain or feature.",
-						"Prefer it for UI state, client-side interactions, and local app logic.",
-						"Avoid using it as a replacement for server-state management tools.",
-						"Leverage selectors to derive computed state instead of duplicating state.",
-						"Keep TypeScript strict to maintain predictable state shape."
+						{
+							"items": [
+								"Use for simple, fast, and minimal global state needs.",
+								"Keep stores small and focused on a single domain or feature.",
+								"Prefer it for UI state, client-side interactions, and local app logic.",
+								"Avoid using it as a replacement for server-state management tools.",
+								"Leverage selectors to derive computed state instead of duplicating state.",
+								"Keep TypeScript strict to maintain predictable state shape."
+							]
+						}
 					]
 				},
 				"redux": {
 					"title": "Redux",
 					"body": [
-						"Use when the application requires strict structure and predictable state flow.",
-						"Prefer for large-scale applications with complex shared state.",
-						"Organize logic with slices, reducers, and actions using Redux Toolkit.",
-						"Centralize state changes to ensure traceability and debugging clarity.",
-						"Use DevTools actively to inspect state changes and flows.",
-						"Avoid overusing Redux for simple or local UI state."
+						{
+							"items": [
+								"Use when the application requires strict structure and predictable state flow.",
+								"Prefer for large-scale applications with complex shared state.",
+								"Organize logic with slices, reducers, and actions using Redux Toolkit.",
+								"Centralize state changes to ensure traceability and debugging clarity.",
+								"Use DevTools actively to inspect state changes and flows.",
+								"Avoid overusing Redux for simple or local UI state."
+							]
+						}
 					]
 				}
 			},
@@ -82,22 +277,30 @@
 				"tanstack-query": {
 					"title": "TanStack Query",
 					"body": [
-						"Use for all server-state (API data), never for UI state.",
-						"Treat the cache as the source of truth for remote data.",
-						"Let it handle caching, retries, refetching, and loading states by default.",
-						"Design query keys carefully and keep them stable and predictable.",
-						"Use mutations for all write operations (create/update/delete).",
-						"Do not duplicate server-state in local state unless strictly necessary."
+						{
+							"items": [
+								"Use for all server-state (API data), never for UI state.",
+								"Treat the cache as the source of truth for remote data.",
+								"Let it handle caching, retries, refetching, and loading states by default.",
+								"Design query keys carefully and keep them stable and predictable.",
+								"Use mutations for all write operations (create/update/delete).",
+								"Do not duplicate server-state in local state unless strictly necessary."
+							]
+						}
 					]
 				},
 				"zod": {
 					"title": "Zod",
 					"body": [
-						"Define schemas first, then infer TypeScript types from them.",
-						"Use it as the single source of truth for validation logic.",
-						"Validate all external inputs (API, forms, user data) at the boundary.",
-						"Fail fast on invalid data instead of silently coercing state.",
-						"Keep schemas modular and reusable across frontend and backend."
+						{
+							"items": [
+								"Define schemas first, then infer TypeScript types from them.",
+								"Use it as the single source of truth for validation logic.",
+								"Validate all external inputs (API, forms, user data) at the boundary.",
+								"Fail fast on invalid data instead of silently coercing state.",
+								"Keep schemas modular and reusable across frontend and backend."
+							]
+						}
 					]
 				}
 			},
@@ -106,21 +309,29 @@
 				"tanstack-table": {
 					"title": "TanStack Table",
 					"body": [
-						"Use as a headless engine: you fully control the UI layer.",
-						"Keep logic (sorting, filtering, pagination) separate from rendering.",
-						"Design tables as composable building blocks, not monolithic components.",
-						"Optimize for large datasets with memoization and virtualization when needed.",
-						"Treat table state as external state when building complex dashboards."
+						{
+							"items": [
+								"Use as a headless engine: you fully control the UI layer.",
+								"Keep logic (sorting, filtering, pagination) separate from rendering.",
+								"Design tables as composable building blocks, not monolithic components.",
+								"Optimize for large datasets with memoization and virtualization when needed.",
+								"Treat table state as external state when building complex dashboards."
+							]
+						}
 					]
 				},
 				"sweetalert2": {
 					"title": "SweetAlert2",
 					"body": [
-						"Use for quick, consistent feedback UX (confirmations, alerts, toasts).",
-						"Keep dialogs simple and action-focused.",
-						"Avoid overusing modals for flows that should be full pages.",
-						"Standardize UX patterns across the app for consistency.",
-						"Trigger only from explicit user actions, not side effects."
+						{
+							"items": [
+								"Use for quick, consistent feedback UX (confirmations, alerts, toasts).",
+								"Keep dialogs simple and action-focused.",
+								"Avoid overusing modals for flows that should be full pages.",
+								"Standardize UX patterns across the app for consistency.",
+								"Trigger only from explicit user actions, not side effects."
+							]
+						}
 					]
 				},
 				"react-icons": {
@@ -131,10 +342,14 @@
 			"react-performance": {
 				"title": "React Performance",
 				"body": [
-					"Use React.lazy + Suspense for all routes and heavy components to reduce initial bundle size.",
-					"Rely on TanStack Query caching to avoid unnecessary API refetching and redundant network calls.",
-					"Optimize images by using WebP or AVIF formats, and always define width and height to prevent layout shifts.",
-					"Avoid importing entire libraries; only import what is needed to ensure proper tree-shaking and smaller bundles."
+					{
+						"items": [
+							"Use React.lazy + Suspense for all routes and heavy components to reduce initial bundle size.",
+							"Rely on TanStack Query caching to avoid unnecessary API refetching and redundant network calls.",
+							"Optimize images by using WebP or AVIF formats, and always define width and height to prevent layout shifts.",
+							"Avoid importing entire libraries; only import what is needed to ensure proper tree-shaking and smaller bundles."
+						]
+					}
 				]
 			}
 		},
@@ -158,22 +373,319 @@
 			"performance": {
 				"title": "Performance",
 				"body": [
-					"Memoization to avoid unnecessary renders.",
-					"Optimize API calls with caching.",
-					"Use lightweight dependencies.",
-					"Prefer modular architecture."
+					{
+						"items": [
+							"Memoization to avoid unnecessary renders.",
+							"Optimize API calls with caching.",
+							"Use lightweight dependencies.",
+							"Prefer modular architecture."
+						]
+					}
 				]
 			},
 			"security": {
 				"title": "Security (OWASP)",
 				"body": [
-					"Validate all inputs.",
-					"Prevent XSS and injection attacks.",
-					"Secure authentication flows.",
-					"Never use `dangerouslySetInnerHTML` without explicit sanitization.",
-					"Never log tokens, passwords, or PII. No sensitive data in unencrypted `localStorage`.",
-					"Use HTTPS in production."
+					{
+						"items": [
+							"Validate all inputs.",
+							"Prevent XSS and injection attacks.",
+							"Secure authentication flows.",
+							"Never use `dangerouslySetInnerHTML` without explicit sanitization.",
+							"Never log tokens, passwords, or PII. No sensitive data in unencrypted `localStorage`.",
+							"Use HTTPS in production."
+						]
+					}
 				]
+			}
+		}
+	},
+	"rtk": {
+		"parent-title": "RTK — TOKEN REDUCTION",
+		"rules": {
+			"title": "Rules",
+			"body": [
+				{
+					"items": [
+						"RTK (Rust Token Killer) wraps CLI commands to strip boilerplate and minimize token output.",
+						"If RTK has a subcommand for it, that subcommand is the only acceptable form. Raw commands are forbidden.",
+						"When unsure if RTK supports a command: run `rtk rewrite <cmd>` first — it returns the RTK equivalent."
+					]
+				}
+			]
+		},
+		"filesystem-search": {
+			"title": "Filesystem & Search",
+			"table": {
+				"columns": ["Raw (forbidden)", "RTK (required)"],
+				"rows": [
+					["`ls`", "`rtk ls`"],
+					["`tree`", "`rtk tree`"],
+					["`cat <file>`", "`rtk read <file>`"],
+					["`find`", "`rtk find`"],
+					["`grep`", "`rtk grep`"],
+					["`wc`", "`rtk wc`"],
+					["`wget`", "`rtk wget`"]
+				]
+			}
+		},
+		"git-github": {
+			"title": "Git & GitHub",
+			"table": {
+				"columns": ["Raw (forbidden)", "RTK (required)"],
+				"rows": [
+					["`git log`, `git status`, `git show`", "`rtk git`"],
+					["`git diff`", "`rtk diff`"],
+					["`gh`", "`rtk gh`"]
+				]
+			}
+		},
+		"build-test-lint": {
+			"title": "Build, Test & Lint",
+			"table": {
+				"columns": ["Raw (forbidden)", "RTK (required)"],
+				"rows": [
+					["`bun test`", "`rtk test bun test`"],
+					["`npx playwright`", "`rtk playwright`"],
+					["`bunx tsc` / `npx tsc`", "`rtk tsc`"],
+					["`bunx eslint` / `npx eslint`", "`rtk lint`"],
+					["`npx prettier` / `npx biome`", "`rtk format`"],
+					["`bun run <script>`", "`rtk npm bun run <script>`"],
+					["`bunx <tool>` / `npx <tool>`", "`rtk npx <tool>`"]
+				]
+			}
+		},
+		"data-environment": {
+			"title": "Data & Environment",
+			"table": {
+				"columns": ["Raw (forbidden)", "RTK (required)"],
+				"rows": [
+					["`cat file.json` / JSON output", "`rtk json <file>`"],
+					["`cat package.json`", "`rtk deps`"],
+					["`printenv` / `env`", "`rtk env`"],
+					["`curl`", "`rtk curl`"]
+				]
+			}
+		},
+		"docker": {
+			"title": "Docker",
+			"table": {
+				"columns": ["Raw (forbidden)", "RTK (required)"],
+				"rows": [["`docker`", "`rtk docker`"]]
+			}
+		},
+		"output-control": {
+			"title": "Output Control",
+			"table": {
+				"columns": ["When", "RTK (required)"],
+				"rows": [
+					["Only need errors/warnings", "`rtk err <cmd>`"],
+					["Need a compact summary", "`rtk summary <cmd>`"],
+					["Need a 2-line technical summary", "`rtk smart <file or cmd>`"],
+					["Filtering log output", "`rtk log <cmd>`"],
+					["Unix pipe filtering", "`<cmd> | rtk pipe`"]
+				]
+			}
+		},
+		"session-audit": {
+			"title": "Session Audit",
+			"table": {
+				"columns": ["Command", "Purpose"],
+				"rows": [
+					["`rtk gain`", "Token savings summary for current session"],
+					[
+						"`rtk discover`",
+						"Find missed RTK opportunities in Claude Code history"
+					],
+					["`rtk session`", "RTK adoption rate across sessions"],
+					["`rtk rewrite <cmd>`", "Get the RTK equivalent of any raw command"]
+				]
+			}
+		}
+	},
+	"taskmaster": {
+		"parent-title": "TASKMASTER — TASK MANAGER",
+		"rules": {
+			"title": "Rules",
+			"body": [
+				{
+					"items": [
+						"Taskmaster is the primary tool for managing all project tasks. Use its MCP server in every vibe coding session.",
+						"Priority order: MCP server first → CLI fallback (`task-master -h`). Never manage tasks manually."
+					]
+				}
+			]
+		},
+		"key-commands": {
+			"title": "Key Commands",
+			"table": {
+				"columns": ["Command", "Purpose"],
+				"rows": [
+					[
+						"`task-master show <id>`",
+						"Most important — full task details (description, status, dependencies, notes). Always run before starting a task."
+					],
+					[
+						"`task-master next`",
+						"Next recommended task based on dependency graph. Use when no ID is provided."
+					]
+				]
+			}
+		},
+		"task-execution-workflow": {
+			"title": "Task Execution Workflow",
+			"body": [
+				{
+					"intro": "If no task ID is provided, run `task-master next` first. Then, before writing any code:"
+				},
+				{
+					"items": [
+						"Fetch task details via Taskmaster MCP (or `task-master show <id>` as fallback). Never start without reading full task details.",
+						"Identify relevant docs via `docs/index.md` — centralizes all project documentation. Fall back to listing `docs/` by name if needed.",
+						"Begin development only once requirements and documentation are sufficiently understood."
+					]
+				}
+			]
+		}
+	},
+	"context7": {
+		"parent-title": "CONTEXT7",
+		"rules": {
+			"title": "Rules",
+			"body": [
+				{
+					"intro": "When dealing with uncertain or framework-specific technical information:"
+				},
+				{
+					"items": [
+						"Always use MCP Context7 as the first source of truth before answering or generating code.",
+						"Treat MCP Context7 as the authoritative runtime context for libraries, frameworks, and APIs.",
+						"Avoid relying on general or outdated knowledge when MCP Context7 is available."
+					]
+				}
+			]
+		}
+	},
+	"pocketbase": {
+		"parent-title": "POCKETBASE",
+		"usage-rules": {
+			"title": "Usage Rules",
+			"body": [
+				{
+					"items": [
+						"The PocketBase MCP server is the mandatory interface for all PocketBase operations. Never use `curl`, raw HTTP, or the Admin UI for operations the MCP server can handle."
+					]
+				},
+				{ "intro": "Priority order:" },
+				{
+					"items": [
+						"MCP PocketBase server — always first, for all operations.",
+						"PocketBase JS SDK — runtime app code only (hooks, frontend API calls).",
+						"Raw HTTP / curl — last resort only (e.g., auth collection user creation via admin API). Document why."
+					]
+				}
+			]
+		},
+		"available-tools": {
+			"title": "Available Tools",
+			"table": {
+				"columns": ["Category", "Tools"],
+				"rows": [
+					[
+						"Collections",
+						"create_collection, get_collection, list_collections"
+					],
+					[
+						"Records",
+						"list_records, fetch_record, create_record, update_record, delete_record"
+					],
+					[
+						"Migrations",
+						"create_migration, apply_migration, list_migrations, revert_migration"
+					],
+					["Monitoring", "list_logs, get_logs_stats"],
+					["Users", "authenticate_user, create_user"],
+					["Database", "backup_database"]
+				]
+			}
+		},
+		"env-vars": {
+			"title": "Required Env Vars",
+			"body": [
+				{
+					"items": [
+						"`POCKETBASE_URL` — PocketBase instance URL (required).",
+						"`POCKETBASE_ADMIN_EMAIL` / `POCKETBASE_ADMIN_PASSWORD` — needed for most operations."
+					]
+				}
+			]
+		},
+		"backups": {
+			"title": "PocketBase Backups",
+			"body": [
+				{
+					"items": [
+						"Daily backups via Admin UI (`Settings > Backups`).",
+						"Retain >= 7 daily backups.",
+						"Optional: ship to S3-compatible storage (Backblaze B2 or similar).",
+						"Test restoration monthly in staging."
+					]
+				}
+			]
+		},
+		"typegen": {
+			"title": "PocketBase Typegen",
+			"body": [
+				{
+					"items": [
+						"Generates TypeScript types from the PocketBase schema. Output: `pocketbase-types.ts`.",
+						"Never write manual collection types — always regenerate.",
+						"Run with: `bun run typegen` or `npx pocketbase-typegen --env`",
+						"Required `.env` vars: `PB_TYPEGEN_URL`, `PB_TYPEGEN_EMAIL`, `PB_TYPEGEN_PASSWORD`.",
+						"`package.json` script: `\"typegen\": \"pocketbase-typegen --env\"`"
+					]
+				}
+			],
+			"usage-patterns": {
+				"title": "Usage Patterns",
+				"typed-instance": {
+					"name": "TypedPocketBase (recommended)",
+					"role": "Cast pb as TypedPocketBase for auto-typed access per collection"
+				},
+				"explicit-generics": {
+					"name": "Explicit Generics",
+					"role": "Use Collections enum and Response types for explicit type annotations"
+				},
+				"expanding-relations": {
+					"name": "Expanding Relations",
+					"role": "Type Expand as { field: RelatedResponse } and pass via getOne options"
+				},
+				"typed-create-update": {
+					"name": "Typed Create / Update",
+					"role": "Use Create<Collections.X> and Update<Collections.X> for write operations"
+				}
+			},
+			"generated-types": {
+				"title": "Generated Types Reference",
+				"table": {
+					"columns": ["Type", "Description"],
+					"rows": [
+						[
+							"Collections",
+							"Const object mapping collection names (PascalCase → ID)"
+						],
+						["[Name]Record", "Raw record type (schema fields only)"],
+						["[Name]Response", "API response type (record + system fields)"],
+						[
+							"[Name][Field]Options",
+							"Union type for select fields with defined values"
+						],
+						[
+							"TypedPocketBase",
+							"Typed PocketBase instance for use with as TypedPocketBase"
+						]
+					]
+				}
 			}
 		}
 	}
