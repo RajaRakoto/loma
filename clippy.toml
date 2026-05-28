@@ -1,0 +1,5 @@
+# Clippy configuration for rust-boilerplate
+cognitive-complexity-threshold = 15
+too-many-arguments-threshold = 7
+type-complexity-threshold = 250
+too-many-lines-threshold = 100
