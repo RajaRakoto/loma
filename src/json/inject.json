@@ -1,0 +1,180 @@
+{
+	"stacks": {
+		"title": "Stack & Ecosystem",
+		"runtime-tooling": {
+			"title": "Runtime & Tooling",
+			"bun": {
+				"name": "Bun",
+				"role": "Package manager, runtime, test runner"
+			},
+			"vite": {
+				"name": "Vite",
+				"role": "Dev server, HMR, optimized builds"
+			},
+			"typescript": {
+				"name": "TypeScript (strict)",
+				"role": "Primary language"
+			},
+			"eslint": {
+				"name": "ESLint (flat config)",
+				"role": "Linting"
+			},
+			"biome": {
+				"name": "Biome",
+				"role": "Formatting + linting"
+			},
+			"docker": {
+				"name": "Docker",
+				"role": "Containerization, VPS deployment"
+			},
+			"nginx": {
+				"name": "NGINX",
+				"role": "Reverse proxy, static file serving, HTTPS termination"
+			},
+			"github-actions": {
+				"name": "GitHub Actions",
+				"role": "CI/CD pipeline — lint, build, test, deploy"
+			}
+		},
+		"react": {
+			"title": "React Ecosystem",
+			"react-core": {
+				"name": "React.js",
+				"role": "Main UI library for component-based architecture"
+			},
+			"react-patterns": {
+				"title": "React Best Practices",
+				"body": [
+					"Component-based architecture with reusable UI units.",
+					"Prefer functional components with hooks.",
+					"Keep components small and feature-oriented.",
+					"Avoid unnecessary re-renders using memoization.",
+					"Use composition over inheritance."
+				]
+			},
+			"react-state": {
+				"title": "React State Management",
+				"zustand": {
+					"title": "Zustand",
+					"body": [
+						"Use for simple, fast, and minimal global state needs.",
+						"Keep stores small and focused on a single domain or feature.",
+						"Prefer it for UI state, client-side interactions, and local app logic.",
+						"Avoid using it as a replacement for server-state management tools.",
+						"Leverage selectors to derive computed state instead of duplicating state.",
+						"Keep TypeScript strict to maintain predictable state shape."
+					]
+				},
+				"redux": {
+					"title": "Redux",
+					"body": [
+						"Use when the application requires strict structure and predictable state flow.",
+						"Prefer for large-scale applications with complex shared state.",
+						"Organize logic with slices, reducers, and actions using Redux Toolkit.",
+						"Centralize state changes to ensure traceability and debugging clarity.",
+						"Use DevTools actively to inspect state changes and flows.",
+						"Avoid overusing Redux for simple or local UI state."
+					]
+				}
+			},
+			"react-data": {
+				"title": "React Data Layer",
+				"tanstack-query": {
+					"title": "TanStack Query",
+					"body": [
+						"Use for all server-state (API data), never for UI state.",
+						"Treat the cache as the source of truth for remote data.",
+						"Let it handle caching, retries, refetching, and loading states by default.",
+						"Design query keys carefully and keep them stable and predictable.",
+						"Use mutations for all write operations (create/update/delete).",
+						"Do not duplicate server-state in local state unless strictly necessary."
+					]
+				},
+				"zod": {
+					"title": "Zod",
+					"body": [
+						"Define schemas first, then infer TypeScript types from them.",
+						"Use it as the single source of truth for validation logic.",
+						"Validate all external inputs (API, forms, user data) at the boundary.",
+						"Fail fast on invalid data instead of silently coercing state.",
+						"Keep schemas modular and reusable across frontend and backend."
+					]
+				}
+			},
+			"react-ui": {
+				"title": "React UI Libraries",
+				"tanstack-table": {
+					"title": "TanStack Table",
+					"body": [
+						"Use as a headless engine: you fully control the UI layer.",
+						"Keep logic (sorting, filtering, pagination) separate from rendering.",
+						"Design tables as composable building blocks, not monolithic components.",
+						"Optimize for large datasets with memoization and virtualization when needed.",
+						"Treat table state as external state when building complex dashboards."
+					]
+				},
+				"sweetalert2": {
+					"title": "SweetAlert2",
+					"body": [
+						"Use for quick, consistent feedback UX (confirmations, alerts, toasts).",
+						"Keep dialogs simple and action-focused.",
+						"Avoid overusing modals for flows that should be full pages.",
+						"Standardize UX patterns across the app for consistency.",
+						"Trigger only from explicit user actions, not side effects."
+					]
+				},
+				"react-icons": {
+					"name": "react-icons",
+					"role": "Use as a unified icon system; keep icons consistent, minimal, and semantic across the UI"
+				}
+			},
+			"react-performance": {
+				"title": "React Performance",
+				"body": [
+					"Use React.lazy + Suspense for all routes and heavy components to reduce initial bundle size.",
+					"Rely on TanStack Query caching to avoid unnecessary API refetching and redundant network calls.",
+					"Optimize images by using WebP or AVIF formats, and always define width and height to prevent layout shifts.",
+					"Avoid importing entire libraries; only import what is needed to ensure proper tree-shaking and smaller bundles."
+				]
+			}
+		},
+		"frontend": {
+			"title": "Frontend (Non-React Specific)",
+			"tailwindcss": {
+				"name": "Tailwind CSS",
+				"role": "Utility-first CSS framework"
+			},
+			"sass": {
+				"name": "Sass",
+				"role": "CSS preprocessing (variables, mixins, nesting)"
+			},
+			"recharts": {
+				"name": "Recharts",
+				"role": "Data visualization (charts, graphs, dashboards)"
+			}
+		},
+		"architecture": {
+			"title": "Architecture",
+			"performance": {
+				"title": "Performance",
+				"body": [
+					"Memoization to avoid unnecessary renders.",
+					"Optimize API calls with caching.",
+					"Use lightweight dependencies.",
+					"Prefer modular architecture."
+				]
+			},
+			"security": {
+				"title": "Security (OWASP)",
+				"body": [
+					"Validate all inputs.",
+					"Prevent XSS and injection attacks.",
+					"Secure authentication flows.",
+					"Never use `dangerouslySetInnerHTML` without explicit sanitization.",
+					"Never log tokens, passwords, or PII. No sensitive data in unencrypted `localStorage`.",
+					"Use HTTPS in production."
+				]
+			}
+		}
+	}
+}
