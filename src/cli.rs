@@ -42,6 +42,36 @@ pub enum Commands {
         #[arg(short, long, default_value = "3000")]
         port: u16,
     },
+
+    /// Install Claude Code.
+    Install,
+
+    /// Completely remove Claude Code and all associated files.
+    Remove,
+
+    /// Remove then cleanly reinstall Claude Code.
+    Reinstall,
+
+    /// Back up Claude Code configuration (interactive).
+    Backup,
+
+    /// Restore a previous backup (interactive).
+    Restore,
+
+    /// Show current status of Claude Code.
+    Status,
+
+    /// Perform diagnostic health checks on the environment.
+    Health,
+
+    /// Update Claude Code.
+    Update,
+
+    /// Generate systemd template or settings config.
+    Gen,
+
+    /// Initialize configuration files for ccm.
+    Init,
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -53,13 +83,13 @@ mod tests {
 
     #[test]
     fn parse_info_verbose() {
-        let cli = Cli::try_parse_from(["rust-boilerplate", "info", "--verbose"]).unwrap();
+        let cli = Cli::try_parse_from(["ccm", "info", "--verbose"]).unwrap();
         assert!(matches!(cli.command, Commands::Info { verbose: true }));
     }
 
     #[test]
     fn parse_run_default_mode() {
-        let cli = Cli::try_parse_from(["rust-boilerplate", "run"]).unwrap();
+        let cli = Cli::try_parse_from(["ccm", "run"]).unwrap();
         match cli.command {
             Commands::Run { mode } => assert_eq!(mode, "development"),
             _ => panic!("expected Run"),
@@ -68,10 +98,22 @@ mod tests {
 
     #[test]
     fn parse_api_custom_port() {
-        let cli = Cli::try_parse_from(["rust-boilerplate", "api", "--port", "8080"]).unwrap();
+        let cli = Cli::try_parse_from(["ccm", "api", "--port", "8080"]).unwrap();
         match cli.command {
             Commands::Api { port } => assert_eq!(port, 8080),
             _ => panic!("expected Api"),
         }
+    }
+
+    #[test]
+    fn parse_status() {
+        let cli = Cli::try_parse_from(["ccm", "status"]).unwrap();
+        assert!(matches!(cli.command, Commands::Status));
+    }
+
+    #[test]
+    fn parse_install() {
+        let cli = Cli::try_parse_from(["ccm", "install"]).unwrap();
+        assert!(matches!(cli.command, Commands::Install));
     }
 }

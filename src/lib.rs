@@ -1,4 +1,4 @@
-//! rust-boilerplate — A minimal, production-ready Rust starter template.
+//! claude-code-manager — Native Rust manager for Claude Code on Fedora Linux.
 //!
 //! # Modules
 //! - [`api`]    — Axum HTTP server (routes, handlers, types)
@@ -6,10 +6,14 @@
 //! - [`config`] — App configuration (env vars + .env)
 //! - [`error`]  — Shared error type and Result alias
 
+#![allow(non_snake_case)]
+
 pub mod api;
 pub mod cli;
+pub mod commands;
 pub mod config;
 pub mod error;
+pub mod utils;
 
 pub use error::{Error, Result};
 

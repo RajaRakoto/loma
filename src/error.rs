@@ -1,4 +1,4 @@
-//! Shared error types for rust-boilerplate.
+//! Shared error types for claude-code-manager.
 //!
 //! Uses [`thiserror`] for ergonomic error definitions.
 //! All modules return [`Result<T>`] which aliases `std::result::Result<T, Error>`.
