@@ -7,8 +7,8 @@
 //! # Environment variables
 //! | Variable   | Default       | Description                        |
 //! |------------|---------------|------------------------------------|
-//! | APP_ENV    | development   | `development` or `production`      |
-//! | APP_DEBUG  | true          | Enable extra debug output          |
+//! | CLI_ENV    | development   | `development` or `production`      |
+//! | CLI_DEBUG  | true          | Enable extra debug output          |
 //! | API_HOST   | 127.0.0.1     | Address the HTTP server binds to   |
 //! | API_PORT   | 3000          | Port the HTTP server listens on    |
 
@@ -32,8 +32,8 @@ impl AppConfig {
     /// Build config from environment variables, falling back to defaults.
     pub fn from_env() -> Result<Self> {
         Ok(Self {
-            env: env::var("APP_ENV").unwrap_or_else(|_| "development".into()),
-            debug: env::var("APP_DEBUG")
+            env: env::var("CLI_ENV").unwrap_or_else(|_| "development".into()),
+            debug: env::var("CLI_DEBUG")
                 .unwrap_or_else(|_| "true".into())
                 .parse()
                 .unwrap_or(true),
