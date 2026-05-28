@@ -48,7 +48,7 @@ name = "ccm"
 path = "src/main.rs"
 
 [lib]
-name = "rust_boilerplate"
+name = "claude_code_manager"
 path = "src/lib.rs"
 
 [profile.release]

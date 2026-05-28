@@ -1,4 +1,4 @@
-# Clippy configuration for rust-boilerplate
+# Clippy configuration for claude-code-manager
 cognitive-complexity-threshold = 15
 too-many-arguments-threshold = 7
 type-complexity-threshold = 250
