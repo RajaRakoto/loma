@@ -21,6 +21,8 @@ pub struct Cli {
 /// Available sub-commands.
 #[derive(Subcommand, Debug)]
 pub enum Commands {
+    // ── General / Metadata ──
+
     /// Print application information.
     Info {
         /// Show detailed information (version, features, repo URL).
@@ -28,20 +30,13 @@ pub enum Commands {
         verbose: bool,
     },
 
-    /// Run the application (add your business logic here).
-    #[command(hide = true)]
-    Run {
-        /// Execution mode, e.g. `development` or `production`.
-        #[arg(short, long, default_value = "development")]
-        mode: String,
-    },
+    // ── Setup & Initialization ──
 
-    /// Start the Axum HTTP API server.
-    #[command(hide = true)]
-    Api {
-        /// Port to listen on (overrides API_PORT env var).
-        #[arg(short, long, default_value = "3000")]
-        port: u16,
+    /// Initialize configuration files for loma.
+    Init {
+        /// The assistant to target.
+        #[arg(default_value = "claude")]
+        assistant: String,
     },
 
     /// Install an AI assistant.
@@ -65,29 +60,7 @@ pub enum Commands {
         assistant: String,
     },
 
-    /// Back up AI assistant configuration.
-    Backup {
-        /// The assistant to target.
-        #[arg(default_value = "claude")]
-        assistant: String,
-    },
-
-    /// Restore a previous backup of an AI assistant.
-    Restore {
-        /// The assistant to target.
-        #[arg(default_value = "claude")]
-        assistant: String,
-    },
-
-    /// Show current status of an AI assistant.
-    Status {
-        /// The assistant to target.
-        #[arg(default_value = "claude")]
-        assistant: String,
-    },
-
-    /// Perform diagnostic health checks on the assistant's environment.
-    Health,
+    // ── Management & Optimization ──
 
     /// Update an AI assistant.
     Update {
@@ -110,11 +83,48 @@ pub enum Commands {
         assistant: String,
     },
 
-    /// Initialize configuration files for loma.
-    Init {
+    // ── Maintenance & Health ──
+
+    /// Show current status of an AI assistant.
+    Status {
         /// The assistant to target.
         #[arg(default_value = "claude")]
         assistant: String,
+    },
+
+    /// Perform diagnostic health checks on the assistant's environment.
+    Health,
+
+    /// Back up AI assistant configuration.
+    Backup {
+        /// The assistant to target.
+        #[arg(default_value = "claude")]
+        assistant: String,
+    },
+
+    /// Restore a previous backup of an AI assistant.
+    Restore {
+        /// The assistant to target.
+        #[arg(default_value = "claude")]
+        assistant: String,
+    },
+
+    // ── Future / Dev Usage (Hidden) ──
+
+    /// Run the application (add your business logic here).
+    #[command(hide = true)]
+    Run {
+        /// Execution mode, e.g. `development` or `production`.
+        #[arg(short, long, default_value = "development")]
+        mode: String,
+    },
+
+    /// Start the Axum HTTP API server.
+    #[command(hide = true)]
+    Api {
+        /// Port to listen on (overrides API_PORT env var).
+        #[arg(short, long, default_value = "3000")]
+        port: u16,
     },
 }
 
