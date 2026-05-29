@@ -22,7 +22,30 @@ async fn main() -> Result<()> {
 
     loma::utils::banner::showBanner();
 
-    let cli = Cli::parse();
+    let cli = match Cli::try_parse() {
+        Ok(parsed) => parsed,
+        Err(err) => {
+            use clap::error::ErrorKind;
+            match err.kind() {
+                ErrorKind::DisplayHelp => {
+                    loma::utils::banner::showHelp();
+                    std::process::exit(0);
+                }
+                ErrorKind::DisplayVersion => {
+                    println!("loma v{}", loma::VERSION);
+                    std::process::exit(0);
+                }
+                _ => {
+                    let err_msg = err.to_string();
+                    let first_line = err_msg.lines().next().unwrap_or("");
+                    eprintln!("\x1b[31;1mError:\x1b[0m {}", first_line);
+                    eprintln!();
+                    loma::utils::banner::showHelp();
+                    std::process::exit(1);
+                }
+            }
+        }
+    };
 
     if cli.version {
         println!("loma v{}", loma::VERSION);
@@ -97,9 +120,7 @@ async fn main() -> Result<()> {
         }
 
         None => {
-            use clap::CommandFactory;
-            Cli::command().print_help()?;
-            println!();
+            loma::utils::banner::showHelp();
         }
     }
 
