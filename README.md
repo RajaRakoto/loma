@@ -91,9 +91,10 @@ src
 │   ├── backup.rs   (<Logic for backup sub-command to back up configs and credentials>)
 │   ├── gen.rs      (<Logic to generate configuration templates or systemd unit files>)
 │   ├── health.rs   (<Environment diagnostics like check npm, dnf, curl, and network connectivity>)
-│   ├── init.rs     (<Initializes local application files: loma.env, ~/.claude dir, etc.>)
+│   ├── init.rs     (<Initializes local application files inside the .loma directory>)
 │   ├── install.rs  (<Logic to install the AI coding assistant CLI via npm>)
 │   ├── mod.rs      (<Rust module declarations and re-exports for the commands module>)
+│   ├── optimize.rs (<Skeleton implementation for assistant configuration and optimization>)
 │   ├── reinstall.rs(<Cleans and runs a fresh installation of the AI assistant>)
 │   ├── remove.rs   (<Removes and cleans up all AI assistant installation and config directories>)
 │   ├── restore.rs  (<Logic to restore configuration/history from backups>)
@@ -114,10 +115,12 @@ src
 ```
 
 ### Project-Specific Scope
-Loma focuses on managing and optimizing configurations inside specific files and directories:
-* **`loma.env`**: Local environment and app configuration file (generated during `loma init`).
-* **`.loma/`**: Directory for custom templates, hooks, and overrides (managed by Loma).
-* **`.claude/`**: Home configuration and credentials directory used by the assistant (e.g., located at `~/.claude`).
+Loma focuses on managing and optimizing configurations inside specific files and directories strictly at the project level:
+* **`.loma/`**: Directory for all project-local Loma execution data, logs, cache, and assistant-specific configurations.
+* **`.loma/loma.env`**: Isolated local environment and app configuration file (generated during `loma init`).
+* **`.loma/<assistant>/`**: Isolated configuration directory used by the targeted AI assistant (e.g. `.loma/claude/` instead of the global `~/.claude`).
+* **`.loma/archives/`**: Directory storing backup archives for targeted AI assistants.
+* **`.loma/logs/loma.log`**: Isolated workspace log file.
 * **`CLAUDE.md`**: Guidebook and rule definition file injected into your project root to instruct the AI coding assistant on coding standards and token budget limitations (generated during `loma init` or `loma gen`).
 
 ---
@@ -128,15 +131,16 @@ Loma provides a full suite of commands to handle the lifecycle and optimization 
 
 | Command | Description |
 | :--- | :--- |
-| `loma init` | Bootstraps workspace-specific configurations (`loma.env` and directory hooks). |
-| `loma install` | Installs the managed AI coding assistant package globally via the package manager. |
-| `loma status` | Displays the current installation status, active process tree, and installed versions. |
-| `loma health` | Runs diagnostic diagnostic routines verifying system prerequisites, permissions, and network connectivity. |
-| `loma update` | Upgrades the installed AI coding assistant package to the latest available release. |
-| `loma backup` | Starts an interactive wizard to compress and back up configuration folders and histories. |
-| `loma restore` | Starts an interactive wizard to safely restore configuration backups. |
-| `loma reinstall` | Purges the current assistant binary and configs, followed by a clean setup. |
-| `loma remove` | Completely uninstalls the AI assistant binary and removes all temporary and cache folders. |
+| `loma init [<assistant>]` | Bootstraps workspace-specific configurations (`.loma/loma.env` and directory hooks). |
+| `loma install [<assistant>]` | Installs the managed AI coding assistant package globally via the package manager. |
+| `loma status [<assistant>]` | Displays the current installation status, active process tree, and installed versions inside `.loma`. |
+| `loma health [<assistant>]` | Runs diagnostic diagnostic routines verifying system prerequisites, permissions, and network connectivity. |
+| `loma update [<assistant>]` | Upgrades the installed AI coding assistant package to the latest available release. |
+| `loma backup [<assistant>]` | Starts an interactive wizard to compress and back up configuration folders and histories inside `.loma/archives/`. |
+| `loma restore [<assistant>]` | Starts an interactive wizard to safely restore configuration backups from `.loma/archives/`. |
+| `loma reinstall [<assistant>]` | Purges the current assistant binary and configs, followed by a clean setup. |
+| `loma remove [<assistant>]` | Completely uninstalls the AI assistant binary and removes all temporary and cache folders. |
+| `loma optimize [<assistant>]` | Optimizes configurations for the targeted AI coding assistant (skeleton). |
 | `loma gen` | Outputs predefined configuration files, system instructions, or systemd services. |
 | `loma api [--port <port>]` | Starts the embedded Axum HTTP server to expose control endpoints. |
 | `loma run [--mode <mode>]` | Runs custom background logic or integration hooks. |
