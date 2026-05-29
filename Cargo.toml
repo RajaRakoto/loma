@@ -1,13 +1,13 @@
 [package]
-name = "claude-code-manager"
+name = "loma"
 version = "0.1.0"
 edition = "2021"
 authors = ["Raja Rakotonirina <raja.rakoto7@gmail.com>"]
 license = "MIT"
-description = ""
-repository = "https://github.com/RajaRakoto/ccm"
+description = "Local LLM Optimizer & Manager Assistant"
+repository = "https://github.com/RajaRakoto/loma"
 readme = "README.md"
-keywords = ["rust", "claude", "vibe-coding", "ai", "manager"]
+keywords = ["rust", "llm", "vibe-coding", "ai", "manager", "optimization"]
 categories = ["command-line-utilities", "ai"]
 
 [dependencies]
@@ -44,11 +44,11 @@ tokio-test = "0.4"
 tower = { version = "0.5", features = ["util"] }
 
 [[bin]]
-name = "ccm"
+name = "loma"
 path = "src/main.rs"
 
 [lib]
-name = "claude_code_manager"
+name = "loma"
 path = "src/lib.rs"
 
 [profile.release]

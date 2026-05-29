@@ -1,6 +1,6 @@
-use std::io::{self, Write};
-use std::fs::OpenOptions;
 use chrono::Local;
+use std::fs::OpenOptions;
+use std::io::{self, Write};
 
 /// Log message to `claude-manager.log` in the current directory.
 pub fn logToFile(level: &str, message: &str) {

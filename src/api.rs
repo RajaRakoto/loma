@@ -153,7 +153,7 @@ async fn log_requests(req: axum::extract::Request, next: Next) -> Response {
 // ── Handlers ──────────────────────────────────────────────────────────────────
 
 async fn root() -> Json<ApiResponse<String>> {
-    ApiResponse::ok("Welcome to Claude Code Manager API".to_string())
+    ApiResponse::ok("Welcome to Loma API".to_string())
 }
 
 async fn health() -> Json<ApiResponse<HealthResponse>> {

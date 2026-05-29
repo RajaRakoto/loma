@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use claude_code_manager::cli::{Cli, Commands};
+use loma::cli::{Cli, Commands};
 use tracing::info;
 
 #[tokio::main]
@@ -13,23 +13,23 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "claude_code_manager=debug,tower_http=info".into()),
+                .unwrap_or_else(|_| "loma=debug,tower_http=info".into()),
         )
         .init();
 
-    info!("Starting ccm v{}", claude_code_manager::VERSION);
+    info!("Starting loma v{}", loma::VERSION);
 
     let cli = Cli::parse();
 
     match cli.command {
         Commands::Info { verbose } => {
             if verbose {
-                println!("Name:        {}", claude_code_manager::NAME);
-                println!("Version:     {}", claude_code_manager::VERSION);
+                println!("Name:        {}", loma::NAME);
+                println!("Version:     {}", loma::VERSION);
                 println!("Features:    CLI · API · Logging · Error handling");
-                println!("Repository:  https://github.com/RajaRakoto/ccm");
+                println!("Repository:  https://github.com/RajaRakoto/loma");
             } else {
-                println!("ccm v{}", claude_code_manager::VERSION);
+                println!("loma v{}", loma::VERSION);
             }
         }
 
@@ -41,47 +41,47 @@ async fn main() -> Result<()> {
 
         Commands::Api { port } => {
             info!("Starting API server on port {}", port);
-            claude_code_manager::api::start_server(port).await?;
+            loma::api::start_server(port).await?;
         }
 
         Commands::Install => {
-            claude_code_manager::commands::runInstall()?;
+            loma::commands::runInstall()?;
         }
 
         Commands::Remove => {
-            claude_code_manager::commands::runRemove()?;
+            loma::commands::runRemove()?;
         }
 
         Commands::Reinstall => {
-            claude_code_manager::commands::runReinstall()?;
+            loma::commands::runReinstall()?;
         }
 
         Commands::Backup => {
-            claude_code_manager::commands::runBackup()?;
+            loma::commands::runBackup()?;
         }
 
         Commands::Restore => {
-            claude_code_manager::commands::runRestore()?;
+            loma::commands::runRestore()?;
         }
 
         Commands::Status => {
-            claude_code_manager::commands::runStatus()?;
+            loma::commands::runStatus()?;
         }
 
         Commands::Health => {
-            claude_code_manager::commands::runHealth()?;
+            loma::commands::runHealth()?;
         }
 
         Commands::Update => {
-            claude_code_manager::commands::runUpdate()?;
+            loma::commands::runUpdate()?;
         }
 
         Commands::Gen => {
-            claude_code_manager::commands::runGen()?;
+            loma::commands::runGen()?;
         }
 
         Commands::Init => {
-            claude_code_manager::commands::runInit()?;
+            loma::commands::runInit()?;
         }
     }
 

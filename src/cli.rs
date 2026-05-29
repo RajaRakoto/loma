@@ -9,10 +9,10 @@ use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
 #[command(
-    name = "ccm",
+    name = "loma",
     version,
     author,
-    about = ""
+    about = "Local LLM Optimizer & Manager Assistant"
 )]
 pub struct Cli {
     #[command(subcommand)]
@@ -70,7 +70,7 @@ pub enum Commands {
     /// Generate systemd template or settings config.
     Gen,
 
-    /// Initialize configuration files for ccm.
+    /// Initialize configuration files for loma.
     Init,
 }
 
@@ -83,13 +83,13 @@ mod tests {
 
     #[test]
     fn parse_info_verbose() {
-        let cli = Cli::try_parse_from(["ccm", "info", "--verbose"]).unwrap();
+        let cli = Cli::try_parse_from(["loma", "info", "--verbose"]).unwrap();
         assert!(matches!(cli.command, Commands::Info { verbose: true }));
     }
 
     #[test]
     fn parse_run_default_mode() {
-        let cli = Cli::try_parse_from(["ccm", "run"]).unwrap();
+        let cli = Cli::try_parse_from(["loma", "run"]).unwrap();
         match cli.command {
             Commands::Run { mode } => assert_eq!(mode, "development"),
             _ => panic!("expected Run"),
@@ -98,7 +98,7 @@ mod tests {
 
     #[test]
     fn parse_api_custom_port() {
-        let cli = Cli::try_parse_from(["ccm", "api", "--port", "8080"]).unwrap();
+        let cli = Cli::try_parse_from(["loma", "api", "--port", "8080"]).unwrap();
         match cli.command {
             Commands::Api { port } => assert_eq!(port, 8080),
             _ => panic!("expected Api"),
@@ -107,13 +107,13 @@ mod tests {
 
     #[test]
     fn parse_status() {
-        let cli = Cli::try_parse_from(["ccm", "status"]).unwrap();
+        let cli = Cli::try_parse_from(["loma", "status"]).unwrap();
         assert!(matches!(cli.command, Commands::Status));
     }
 
     #[test]
     fn parse_install() {
-        let cli = Cli::try_parse_from(["ccm", "install"]).unwrap();
+        let cli = Cli::try_parse_from(["loma", "install"]).unwrap();
         assert!(matches!(cli.command, Commands::Install));
     }
 }
