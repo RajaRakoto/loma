@@ -22,6 +22,32 @@ pub const CLAUDE_BINARY_PATHS: &[&str] = &[
     ".bun/bin/claude",
 ];
 
+/// Get the project-local .loma directory path.
+pub fn getLomaDir() -> PathBuf {
+    PathBuf::from(".loma")
+}
+
+/// Get the configuration directory for a specific assistant.
+pub fn getAssistantDir(assistant: &str) -> PathBuf {
+    getLomaDir().join(assistant)
+}
+
+/// Get the configuration file path for a specific assistant.
+pub fn getAssistantConfigFile(assistant: &str) -> PathBuf {
+    getLomaDir().join(format!("{}.json", assistant))
+}
+
+/// Get the archives directory path.
+pub fn getArchivesDir() -> PathBuf {
+    getLomaDir().join("archives")
+}
+
+/// Get the log file path.
+pub fn getLogFile() -> PathBuf {
+    getLomaDir().join("logs").join("loma.log")
+}
+
+
 /// A robust, platform-agnostic home directory resolver.
 pub fn get_home_dir() -> Option<PathBuf> {
     std::env::var_os("HOME")

@@ -2,13 +2,17 @@ use chrono::Local;
 use std::fs::OpenOptions;
 use std::io::{self, Write};
 
-/// Log message to `claude-manager.log` in the current directory.
+/// Log message to `.loma/logs/loma.log` in the local project directory.
 pub fn logToFile(level: &str, message: &str) {
     let timestamp = Local::now().format("%Y-%m-%d %H:%M:%S").to_string();
+    let lomaDir = std::path::Path::new(".loma");
+    let logDir = lomaDir.join("logs");
+    let _ = std::fs::create_dir_all(&logDir);
+    let logPath = logDir.join("loma.log");
     if let Ok(mut file) = OpenOptions::new()
         .create(true)
         .append(true)
-        .open("claude-manager.log")
+        .open(&logPath)
     {
         let _ = writeln!(file, "{} [{}] {}", timestamp, level, message);
     }
