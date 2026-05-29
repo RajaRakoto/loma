@@ -3,24 +3,12 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
-pub const CLAUDE_CONFIG_DIRS: &[&str] = &[".claude"];
-pub const CLAUDE_CONFIG_FILES: &[&str] = &[".claude.json"];
-pub const CLAUDE_DATA_DIRS: &[&str] = &[
-    ".local/share/claude",
-    ".cache/claude",
-    ".cache/@anthropic-ai",
-];
-pub const CLAUDE_DNF_REPO_FILES: &[&str] = &[
-    "/etc/yum.repos.d/claude-code.repo",
-    "/etc/yum.repos.d/anthropic-claude.repo",
-];
-pub const CLAUDE_BINARY_PATHS: &[&str] = &[
-    ".local/bin/claude",
-    "/usr/local/bin/claude",
-    "/usr/bin/claude",
-    ".npm-global/bin/claude",
-    ".bun/bin/claude",
-];
+pub use crate::utils::r#const::{
+    CLAUDE_BINARY_PATHS, CLAUDE_CONFIG_DIRS, CLAUDE_CONFIG_FILES, CLAUDE_DATA_DIRS,
+    CLAUDE_DNF_REPO_FILES,
+};
+
+
 
 /// Get the project-local .loma directory path.
 pub fn getLomaDir() -> PathBuf {
@@ -29,12 +17,20 @@ pub fn getLomaDir() -> PathBuf {
 
 /// Get the configuration directory for a specific assistant.
 pub fn getAssistantDir(assistant: &str) -> PathBuf {
-    getLomaDir().join(assistant)
+    if assistant.to_lowercase() == "claude" {
+        PathBuf::from(CLAUDE_CONFIG_DIRS[0])
+    } else {
+        getLomaDir().join(assistant)
+    }
 }
 
 /// Get the configuration file path for a specific assistant.
 pub fn getAssistantConfigFile(assistant: &str) -> PathBuf {
-    getLomaDir().join(format!("{}.json", assistant))
+    if assistant.to_lowercase() == "claude" {
+        PathBuf::from(CLAUDE_CONFIG_FILES[0])
+    } else {
+        getLomaDir().join(format!("{}.json", assistant))
+    }
 }
 
 /// Get the archives directory path.

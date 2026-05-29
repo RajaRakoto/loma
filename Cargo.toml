@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Raja Rakotonirina <raja.rakoto7@gmail.com>"]
 license = "MIT"
-description = "Local LLM Optimizer & Manager Assistant"
+description = "LLM Optimizer & Manager"
 repository = "https://github.com/RajaRakoto/loma"
 readme = "README.md"
 keywords = ["rust", "llm", "vibe-coding", "ai", "manager", "optimization"]
@@ -23,6 +23,9 @@ axum = { version = "0.7", features = ["macros"] }
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+inquire = "0.7.5"
+pulldown-cmark = "0.10"
+
 
 # Logging and tracing
 tracing = "0.1"

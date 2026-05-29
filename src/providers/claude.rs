@@ -83,7 +83,7 @@ impl ClaudeProvider {
     }
 
     fn removeConfigsAndData(&self) -> crate::Result<()> {
-        display::step("Removing configuration files and data under .loma");
+        display::step("Removing configuration files and data");
 
         let assistantDir = lomaFs::getAssistantDir("claude");
         if assistantDir.exists() {
@@ -213,7 +213,7 @@ impl super::AssistantProvider for ClaudeProvider {
             self.remove()?;
         }
 
-        // Check for leftover files in local .loma
+        // Check for leftover files in native workspace
         let assistantDir = lomaFs::getAssistantDir("claude");
         let assistantConfigFile = lomaFs::getAssistantConfigFile("claude");
         let mut staleFound = false;
@@ -357,8 +357,8 @@ impl super::AssistantProvider for ClaudeProvider {
         println!();
         display::warn("WARNING: The following will be permanently deleted:");
         println!("  • claude binaries");
-        println!("  • .loma/claude/  (settings, agents, skills, MCP configs)");
-        println!("  • .loma/claude.json  (auth tokens, session history)");
+        println!("  • .claude/  (settings, agents, skills, MCP configs)");
+        println!("  • .claude.json  (auth tokens, session history)");
         println!();
 
         if !display::confirm("Confirm complete removal of Claude?") {
@@ -514,7 +514,7 @@ impl super::AssistantProvider for ClaudeProvider {
 
         display::divider();
 
-        // 2. Directories & configurations check inside .loma
+        // 2. Directories & configurations check inside workspace
         display::step("Configuration & Data Directories");
         let assistantDir = lomaFs::getAssistantDir("claude");
         let assistantConfigFile = lomaFs::getAssistantConfigFile("claude");

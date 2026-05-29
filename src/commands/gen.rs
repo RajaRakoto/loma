@@ -1,64 +1,49 @@
 use crate::utils::display;
+use crate::commands::gen_interactive;
 use std::fs;
 use std::path::Path;
 
-pub fn runGen() -> crate::Result<()> {
-    display::title("Generate Configuration Templates");
+pub fn runGen(assistant: &str) -> crate::Result<()> {
+    if assistant.to_lowercase() == "claude" {
+        return gen_interactive::promptAndGenerateClaude();
+    }
 
-    // 1. Generate systemd service template
-    display::step("Generating systemd service template (claude-code.service)...");
-    let servicePath = Path::new("claude-code.service");
-    if servicePath.exists() {
-        display::info("claude-code.service file already exists in current directory.");
+    let targetName = if assistant.to_lowercase().ends_with(".md") {
+        assistant.to_uppercase()
     } else {
-        let serviceContent = r#"[Unit]
-Description=Claude Code Service Daemon
-After=network.target
+        format!("{}.md", assistant.to_uppercase())
+    };
 
-[Service]
-Type=simple
-User=raja
-ExecStart=/home/raja/.local/bin/claude daemon
-Restart=on-failure
-Environment=PATH=/home/raja/.local/bin:/usr/local/bin:/usr/bin:/bin
+    println!("# Loma Guideline Generator\n");
+    println!("- **Target file:** `{}`", targetName);
 
-[Install]
-WantedBy=multi-user.target
-"#;
-        match fs::write(servicePath, serviceContent) {
-            Ok(_) => display::success("Generated claude-code.service template successfully."),
-            Err(e) => {
-                display::error(&format!("Failed to write service template: {}", e));
-                return Err(crate::Error::other("Failed to write service template"));
-            }
+    let targetPath = Path::new(&targetName);
+
+    if !targetPath.exists() {
+        if !display::confirm(&format!("File '{}' does not exist. Create it?", targetName)) {
+            println!("\n> **Notice:** File creation aborted by user.");
+            return Ok(());
+        }
+    } else {
+        if !display::confirm(&format!("File '{}' already exists. Overwrite it?", targetName)) {
+            println!("\n> **Notice:** Overwrite aborted by user. Existing file preserved.");
+            return Ok(());
         }
     }
 
-    // 2. Generate settings.json template
-    display::step("Generating default settings.json template...");
-    let settingsPath = Path::new("settings.template.json");
-    if settingsPath.exists() {
-        display::info("settings.template.json file already exists.");
-    } else {
-        let settingsContent = r#"{
-  "theme": "dark",
-  "autoCompactWindow": 190000,
-  "telemetry": false,
-  "defaultModel": "claude-3-5-sonnet",
-  "editor": "nano"
-}
-"#;
-        match fs::write(settingsPath, settingsContent) {
-            Ok(_) => display::success("Generated settings.template.json successfully."),
-            Err(e) => {
-                display::error(&format!("Failed to write settings template: {}", e));
-                return Err(crate::Error::other("Failed to write settings template"));
+    match gen_interactive::promptAndGenerate()? {
+        Some(markdown) => {
+            if markdown.is_empty() {
+                println!("\n> **Notice:** No elements selected. Nothing to write.");
+            } else {
+                fs::write(targetPath, &markdown)?;
+                println!("\n**Success:** Guidelines successfully generated and written to `{}`.", targetName);
             }
         }
+        None => {
+            println!("\n> **Notice:** Generation canceled by user.");
+        }
     }
-
-    display::divider();
-    display::success("Generation templates created successfully.");
 
     Ok(())
 }

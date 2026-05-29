@@ -109,6 +109,13 @@ pub enum Commands {
         assistant: String,
     },
 
+    /// Synchronize and repair assistant configurations and native structure.
+    Sync {
+        /// The assistant to target.
+        #[arg(default_value = "claude")]
+        assistant: String,
+    },
+
     // ── Future / Dev Usage (Hidden) ──
 
     /// Run the application (add your business logic here).

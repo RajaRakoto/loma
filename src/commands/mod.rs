@@ -1,5 +1,6 @@
 pub mod backup;
 pub mod gen;
+pub mod gen_interactive;
 pub mod health;
 pub mod init;
 pub mod install;
@@ -8,6 +9,7 @@ pub mod reinstall;
 pub mod remove;
 pub mod restore;
 pub mod status;
+pub mod sync;
 pub mod update;
 
 pub use backup::runBackup;
@@ -20,4 +22,5 @@ pub use reinstall::runReinstall;
 pub use remove::runRemove;
 pub use restore::runRestore;
 pub use status::runStatus;
+pub use sync::runSync;
 pub use update::runUpdate;

@@ -87,3 +87,7 @@ docker-compose.override.yml
 
 # Own
 tmp/
+loma
+.loma/
+.claude/
+.claude.json

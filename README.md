@@ -15,7 +15,7 @@ It is built on a fundamental but often neglected principle: even on developer ma
 - [🚀 Installation](#-installation)
 - [🔨 Build & Test](#-build--test)
 - [📁 Project Structure](#-project-structure)
-  - [Project-Specific Scope](#project-specific-scope)
+  - [Workspace Architecture Model](#workspace-architecture-model)
 - [💻 CLI Commands](#-cli-commands)
 - [🎮 Best Practices for Context Optimization](#-best-practices-for-context-optimization)
 - [📦 Ref & ecosystem](#-ref--ecosystem)
@@ -28,9 +28,13 @@ It is built on a fundamental but often neglected principle: even on developer ma
 * 🛠️ **Unified CLI & API Engine**: Offers a robust set of command-line tools for manual workflows, backed by an embedded high-performance Axum HTTP REST server for remote orchestration.
 * 🩺 **Deep Environment Diagnostics (`health`)**: Automatically evaluates system prerequisites, global package managers, Node.js runtimes, network registry latency, and file permissions.
 * 📦 **Automated Lifecycle Management**: Handles package installation, complete teardowns, clean reinstalls, and background updates seamlessly under the hood.
-* 💾 **Interactive Backup & Restore**: Safeguards configurations, histories, and credential templates with structured compression and recovery utilities.
-* ⚙️ **Smart Init & Settings Generator**: Bootstraps workspace-specific parameters, local `loma.env` configurations, and systemd service templates.
-* ⚡ **Context & Token Minimizer**: Helps developers enforce token budgets and context constraints using highly optimized system prompts and injection configurations.
+* 💾 **Interactive Backup & Restore**: Safeguards configurations, histories, and credential templates with structured compression and recovery utilities (operating relative to project root for Claude).
+* ⚙️ **Smart Init & Settings Scaffolder**: Bootstraps project-native assistant folders, local `loma.env` configurations, and systemd service templates.
+* ⚡ **Context & Token Minimizer**: Helps developers enforce token budgets using highly optimized, modular prompts and injection configurations.
+* 🌀 **Multi-Stage Interactive Guideline Generator**: Generates/injects modular prompts interactively via a robust Rust TUI.
+* 🔀 **Markdown-Aware Collision Management**: Intelligently resolves directory naming conflicts with options like Overwrite, Duplicate, or Merge (combining headers and bullet lists uniquely, validated structurally via `pulldown-cmark`).
+* 🔗 **Internal Injection Registry**: Tracks and maintains historical prompt integrity with FNV-1a content hash tracking under `.loma/registry/injections.json`.
+* 🔄 **Diagnostic Sync & Repair (`sync`)**: Compares on-disk configs, identifies duplicates, verifies settings JSON validity, and repairs mapping registries dynamically.
 
 ---
 
@@ -90,8 +94,9 @@ src
 ├── commands        (<Folder containing individual subcommand implementations>)
 │   ├── backup.rs   (<Logic for backup sub-command to back up configs and credentials>)
 │   ├── gen.rs      (<Logic to generate configuration templates or systemd unit files>)
+│   ├── gen_interactive.rs (<Multi-stage interactive TUI, markdown merging, and naming format rules>)
 │   ├── health.rs   (<Environment diagnostics like check npm, dnf, curl, and network connectivity>)
-│   ├── init.rs     (<Initializes local application files inside the .loma directory>)
+│   ├── init.rs     (<Initializes local application files and scaffolds native assistant folders>)
 │   ├── install.rs  (<Logic to install the AI coding assistant CLI via npm>)
 │   ├── mod.rs      (<Rust module declarations and re-exports for the commands module>)
 │   ├── optimize.rs (<Skeleton implementation for assistant configuration and optimization>)
@@ -99,6 +104,7 @@ src
 │   ├── remove.rs   (<Removes and cleans up all AI assistant installation and config directories>)
 │   ├── restore.rs  (<Logic to restore configuration/history from backups>)
 │   ├── status.rs   (<Checks current installation status, active processes, and versions>)
+│   ├── sync.rs     (<Sync & Repair engine verifying integrity, hash duplicates, and mapping repairs>)
 │   └── update.rs   (<Logic to check and perform upgrades of the installed AI assistant>)
 ├── config.rs       (<Application environment configuration management loading via dotenv>)
 ├── error.rs        (<Centralized error definitions and Result alias using thiserror/anyhow>)
@@ -108,20 +114,34 @@ src
 ├── main.rs         (<Executable entry point parsing CLI inputs and running appropriate tasks>)
 └── utils           (<General utility functions>)
     ├── banner.rs   (<Renders the startup ASCII text banner>)
+    ├── const.rs    (<Central CLI/assistant constant configurations>)
     ├── display.rs  (<Provides beautiful, color-coded logging and terminal output utilities>)
     ├── env.rs      (<Environment detection helper functions>)
     ├── fs.rs       (<Advanced file system utilities for robust copy, validation, and permissions checking>)
     └── mod.rs      (<Rust module declarations for utilities>)
 ```
 
-### Project-Specific Scope
-Loma focuses on managing and optimizing configurations inside specific files and directories strictly at the project level:
-* **`.loma/`**: Directory for all project-local Loma execution data, logs, cache, and assistant-specific configurations.
-* **`.loma/loma.env`**: Isolated local environment and app configuration file (generated during `loma init`).
-* **`.loma/<assistant>/`**: Isolated configuration directory used by the targeted AI assistant (e.g. `.loma/claude/` instead of the global `~/.claude`).
-* **`.loma/archives/`**: Directory storing backup archives for targeted AI assistants.
-* **`.loma/logs/loma.log`**: Isolated workspace log file.
-* **`CLAUDE.md`**: Guidebook and rule definition file injected into your project root to instruct the AI coding assistant on coding standards and token budget limitations (generated during `loma init` or `loma gen`).
+### Workspace Architecture Model
+
+Loma separates internal engine maintenance from native developer workspace tools:
+
+```
+my-project/
+├── CLAUDE.md                   # Minimal bootstrap file referencing native rules
+├── .claude.json                # User credential, session history, and tokens
+├── .claude/                    # Native Claude environment (Direct root access)
+│   ├── settings.json           # General watchPatterns and assistant configs
+│   ├── rules/                  # Modular rules (UPPERCASE_SNAKE_CASE_RULES.md)
+│   ├── agents/                 # Custom agents (UPPERCASE_SNAKE_CASE_AGENTS.md)
+│   ├── skills/                 # Extracted skills (UPPERCASE_SNAKE_CASE_SKILLS.md)
+│   └── commands/               # CLI tools commands (UPPERCASE_SNAKE_CASE_COMMANDS.md)
+└── .loma/                      # Internal Loma Workspace (Ignored in VCS)
+    ├── loma.env                # Local app configuration
+    ├── logs/                   # Isolated command and server logs
+    ├── archives/               # Local compressed backups (relative format)
+    └── registry/
+        └── injections.json     # Injection history registry with FNV-1a hashing
+```
 
 ---
 
@@ -131,17 +151,18 @@ Loma provides a full suite of commands to handle the lifecycle and optimization 
 
 | Command | Description |
 | :--- | :--- |
-| `loma init [<assistant>]` | Bootstraps workspace-specific configurations (`.loma/loma.env` and directory hooks). |
+| `loma init [<assistant>]` | Bootstraps workspace-specific configurations (`.loma/loma.env` and scaffolds native `.claude/` directories). |
 | `loma install [<assistant>]` | Installs the managed AI coding assistant package globally via the package manager. |
-| `loma status [<assistant>]` | Displays the current installation status, active process tree, and installed versions inside `.loma`. |
+| `loma status [<assistant>]` | Displays the current installation status, active process tree, and installed versions. |
 | `loma health [<assistant>]` | Runs diagnostic diagnostic routines verifying system prerequisites, permissions, and network connectivity. |
 | `loma update [<assistant>]` | Upgrades the installed AI coding assistant package to the latest available release. |
-| `loma backup [<assistant>]` | Starts an interactive wizard to compress and back up configuration folders and histories inside `.loma/archives/`. |
-| `loma restore [<assistant>]` | Starts an interactive wizard to safely restore configuration backups from `.loma/archives/`. |
+| `loma backup [<assistant>]` | Starts an interactive wizard to compress and back up configurations relative to the target's natural directories. |
+| `loma restore [<assistant>]` | Starts an interactive wizard to safely restore configuration backups directly back into place. |
 | `loma reinstall [<assistant>]` | Purges the current assistant binary and configs, followed by a clean setup. |
 | `loma remove [<assistant>]` | Completely uninstalls the AI assistant binary and removes all temporary and cache folders. |
 | `loma optimize [<assistant>]` | Optimizes configurations for the targeted AI coding assistant (skeleton). |
-| `loma gen` | Outputs predefined configuration files, system instructions, or systemd services. |
+| `loma gen [<assistant>]` | Triggers the Multi-Stage Interactive TUI for modular, token-saving files creation in `.claude/`. |
+| `loma sync [<assistant>]` | Validates directory health, checks for duplicate hashes, and dynamically repairs `.loma/registry/injections.json`. |
 | `loma api [--port <port>]` | Starts the embedded Axum HTTP server to expose control endpoints. |
 | `loma run [--mode <mode>]` | Runs custom background logic or integration hooks. |
 | `loma info [--verbose]` | Prints CLI binary metadata, compiled features, and repository coordinates. |
@@ -153,7 +174,7 @@ Loma provides a full suite of commands to handle the lifecycle and optimization 
 To maximize the efficiency of your AI coding assistant and save token costs, apply these strategic practices:
 
 1. **Precision Context**: Only feed the files you are actively working on. Avoid passing entire large directories if only a single module needs to be edited.
-2. **Strict Rule Injections**: Use `CLAUDE.md` (or equivalent assistant configurations) to restrict verbose responses, prevent the AI from refactoring adjacent unrelated code, and force concise, surgical updates.
+2. **Strict Rule Injections**: Use `.claude/rules/` to restrict verbose responses, prevent the AI from refactoring adjacent unrelated code, and force concise, surgical updates.
 3. **Environment Hygiene**: Periodically run `loma health` to ensure your system runtimes are optimal and network latency to registries is minimized.
 4. **History Rotation**: Large prompt histories can accumulate bloat over time. Make frequent use of `loma backup` and occasionally wipe log caches using `loma reinstall` to start fresh.
 

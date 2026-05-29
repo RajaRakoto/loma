@@ -55,17 +55,51 @@ CLAUDE_CODE_AUTO_COMPACT_WINDOW=190000
         }
     }
 
-    // 2. Initialize .loma/<assistant> directory
-    display::step(&format!("Initializing {} configuration directory...", assistant));
-    let assistantDir = lomaFs::getAssistantDir(assistant);
-    if assistantDir.exists() {
-        display::info(&format!("Configuration directory '.loma/{}' already exists.", assistant));
+    // 2. Initialize assistant configuration directory
+    if assistant.to_lowercase() == "claude" {
+        display::step("Initializing native Claude architecture...");
+        let assistantDir = lomaFs::getAssistantDir(assistant);
+        
+        let subdirs = ["rules", "agents", "skills", "commands"];
+        for subdir in &subdirs {
+            let path = assistantDir.join(subdir);
+            if !path.exists() {
+                fs::create_dir_all(&path)?;
+                display::success(&format!("Created native subdirectory: {}", path.display()));
+            }
+        }
+
+        let settingsPath = assistantDir.join("settings.json");
+        if !settingsPath.exists() {
+            let defaultSettings = r#"{
+  "watchPatterns": []
+}
+"#;
+            fs::write(&settingsPath, defaultSettings)?;
+            display::success(&format!("Created default settings file: {}", settingsPath.display()));
+        }
+
+        let claudeMdPath = std::path::Path::new("CLAUDE.md");
+        if !claudeMdPath.exists() {
+            let defaultClaudeMd = r#"# Claude Project Context
+
+Load rules, agents, skills and commands from `.claude/`.
+"#;
+            fs::write(claudeMdPath, defaultClaudeMd)?;
+            display::success("Created bootstrap CLAUDE.md");
+        }
     } else {
-        match fs::create_dir_all(&assistantDir) {
-            Ok(_) => display::success(&format!("Created '.loma/{}' directory.", assistant)),
-            Err(e) => {
-                display::error(&format!("Failed to create '.loma/{}' directory: {}", assistant, e));
-                return Err(crate::Error::other("Failed to create assistant directory"));
+        display::step(&format!("Initializing {} configuration directory...", assistant));
+        let assistantDir = lomaFs::getAssistantDir(assistant);
+        if assistantDir.exists() {
+            display::info(&format!("Configuration directory '.loma/{}' already exists.", assistant));
+        } else {
+            match fs::create_dir_all(&assistantDir) {
+                Ok(_) => display::success(&format!("Created '.loma/{}' directory.", assistant)),
+                Err(e) => {
+                    display::error(&format!("Failed to create '.loma/{}' directory: {}", assistant, e));
+                    return Err(crate::Error::other("Failed to create assistant directory"));
+                }
             }
         }
     }

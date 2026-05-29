@@ -119,7 +119,12 @@ pub fn runRestore(assistant: &str) -> crate::Result<()> {
 
     display::step("Restoring files");
 
-    let lomaDir = lomaFs::getLomaDir();
+    let is_claude = assistant.to_lowercase() == "claude";
+    let baseDir = if is_claude {
+        std::path::PathBuf::from(".")
+    } else {
+        lomaFs::getLomaDir()
+    };
     let assistantDir = lomaFs::getAssistantDir(assistant);
     let assistantConfigFile = lomaFs::getAssistantConfigFile(assistant);
 
@@ -135,21 +140,20 @@ pub fn runRestore(assistant: &str) -> crate::Result<()> {
 
         let mut relativePreArgs = Vec::new();
         if assistantDir.exists() {
-            relativePreArgs.push(assistant.to_string());
+            relativePreArgs.push(assistantDir.file_name().unwrap().to_string_lossy().into_owned());
         }
-        let configFilename = format!("{}.json", assistant);
         if assistantConfigFile.exists() {
-            relativePreArgs.push(configFilename);
+            relativePreArgs.push(assistantConfigFile.file_name().unwrap().to_string_lossy().into_owned());
         }
 
         if !relativePreArgs.is_empty() {
-            lomaFs::createZip(&lomaDir, &relativePreArgs, &preBackupPath)?;
+            lomaFs::createZip(&baseDir, &relativePreArgs, &preBackupPath)?;
             display::success(&format!("Safety backup created: {}", preBackupPath.display()));
         }
     }
 
-    // Extract zip directly into lomaDir
-    lomaFs::extractZip(selectedArchive, &lomaDir)?;
+    // Extract zip directly into baseDir
+    lomaFs::extractZip(selectedArchive, &baseDir)?;
 
     display::success("Restore completed successfully.");
     display::info(&format!("Restart {} to apply the restored settings.", assistant));

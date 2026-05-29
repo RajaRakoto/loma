@@ -13,7 +13,7 @@ pub fn runBackup(assistant: &str) -> crate::Result<()> {
     let hasData = assistantDir.exists() || assistantConfigFile.exists();
 
     if !hasData {
-        display::error(&format!("No {} configuration found to back up in .loma.", assistant));
+        display::error(&format!("No {} configuration found to back up.", assistant));
         return Err(crate::Error::other("No configuration found to back up"));
     }
 
@@ -51,37 +51,47 @@ pub fn runBackup(assistant: &str) -> crate::Result<()> {
     };
     let archivePath = archivesDir.join(&archiveName);
 
-    let lomaDir = lomaFs::getLomaDir();
+    let is_claude = assistant.to_lowercase() == "claude";
+    let baseDir = if is_claude {
+        std::path::PathBuf::from(".")
+    } else {
+        lomaFs::getLomaDir()
+    };
 
     if choice == "1" {
-        display::step(&format!("Backing up JSON config files from .loma/{}", assistant));
+        let display_src = if is_claude {
+            format!("{}/", assistantDir.display())
+        } else {
+            format!(".loma/{}/", assistant)
+        };
+        display::step(&format!("Backing up JSON config files from {}", display_src));
         
         let settingsFile = assistantDir.join("settings.json");
         let settingsLocalFile = assistantDir.join("settings.local.json");
         let mut relativeFiles = Vec::new();
+        let dir_name = assistantDir.file_name().unwrap().to_string_lossy();
         if settingsFile.exists() {
-            relativeFiles.push(format!("{}/settings.json", assistant));
+            relativeFiles.push(format!("{}/settings.json", dir_name));
         }
         if settingsLocalFile.exists() {
-            relativeFiles.push(format!("{}/settings.local.json", assistant));
+            relativeFiles.push(format!("{}/settings.local.json", dir_name));
         }
 
         if relativeFiles.is_empty() {
-            display::error(&format!("No settings.json found in .loma/{}", assistant));
+            display::error(&format!("No settings.json found in {}", display_src));
             return Err(crate::Error::other("No settings.json found"));
         }
 
-        lomaFs::createZip(&lomaDir, &relativeFiles, &archivePath)?;
+        lomaFs::createZip(&baseDir, &relativeFiles, &archivePath)?;
         display::success(&format!("JSON config backup created: {}", archivePath.display()));
     } else {
         display::step("Full backup");
         let mut relativeArgs = Vec::new();
         if assistantDir.exists() {
-            relativeArgs.push(assistant.to_string());
+            relativeArgs.push(assistantDir.file_name().unwrap().to_string_lossy().into_owned());
         }
-        let configFilename = format!("{}.json", assistant);
         if assistantConfigFile.exists() {
-            relativeArgs.push(configFilename);
+            relativeArgs.push(assistantConfigFile.file_name().unwrap().to_string_lossy().into_owned());
         }
 
         if relativeArgs.is_empty() {
@@ -89,13 +99,14 @@ pub fn runBackup(assistant: &str) -> crate::Result<()> {
             return Err(crate::Error::other("No files found to back up"));
         }
 
-        display::info("Items included in backup (relative to .loma):");
+        let display_root = if is_claude { "workspace root" } else { ".loma" };
+        display::info(&format!("Items included in backup (relative to {}):", display_root));
         for item in &relativeArgs {
             println!("    {}", item);
         }
         println!();
 
-        lomaFs::createZip(&lomaDir, &relativeArgs, &archivePath)?;
+        lomaFs::createZip(&baseDir, &relativeArgs, &archivePath)?;
         display::success(&format!("Full backup created: {}", archivePath.display()));
     }
 

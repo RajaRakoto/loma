@@ -95,6 +95,10 @@ async fn main() -> Result<()> {
             loma::commands::runRestore(&assistant)?;
         }
 
+        Some(Commands::Sync { assistant }) => {
+            loma::commands::runSync(&assistant)?;
+        }
+
         Some(Commands::Status { assistant }) => {
             loma::commands::runStatus(&assistant)?;
         }
