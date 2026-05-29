@@ -69,8 +69,8 @@ async fn main() -> Result<()> {
             loma::commands::runStatus(&assistant)?;
         }
 
-        Commands::Health { assistant } => {
-            loma::commands::runHealth(&assistant)?;
+        Commands::Health => {
+            loma::commands::runHealth()?;
         }
 
         Commands::Update { assistant } => {

@@ -13,6 +13,7 @@ pub mod cli;
 pub mod commands;
 pub mod config;
 pub mod error;
+pub mod providers;
 pub mod utils;
 
 pub use error::{Error, Result};

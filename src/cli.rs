@@ -86,11 +86,7 @@ pub enum Commands {
     },
 
     /// Perform diagnostic health checks on the assistant's environment.
-    Health {
-        /// The assistant to target.
-        #[arg(default_value = "claude")]
-        assistant: String,
-    },
+    Health,
 
     /// Update an AI assistant.
     Update {
