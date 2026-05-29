@@ -8,15 +8,14 @@
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[command(
-    name = "loma",
-    version,
-    author,
-    about = "Local LLM Optimizer & Manager Assistant"
-)]
+#[command(name = "loma", version, author, about = "", disable_version_flag = true)]
 pub struct Cli {
     #[command(subcommand)]
-    pub command: Commands,
+    pub command: Option<Commands>,
+
+    /// Print version information.
+    #[arg(short = 'v', long = "version")]
+    pub version: bool,
 }
 
 /// Available sub-commands.
@@ -30,6 +29,7 @@ pub enum Commands {
     },
 
     /// Run the application (add your business logic here).
+    #[command(hide = true)]
     Run {
         /// Execution mode, e.g. `development` or `production`.
         #[arg(short, long, default_value = "development")]
@@ -37,6 +37,7 @@ pub enum Commands {
     },
 
     /// Start the Axum HTTP API server.
+    #[command(hide = true)]
     Api {
         /// Port to listen on (overrides API_PORT env var).
         #[arg(short, long, default_value = "3000")]
@@ -102,8 +103,12 @@ pub enum Commands {
         assistant: String,
     },
 
-    /// Generate systemd template or settings config.
-    Gen,
+    /// Generate guidelines/conventions for an assistant.
+    Gen {
+        /// The assistant to target (e.g. claude -> CLAUDE.md).
+        #[arg(default_value = "claude")]
+        assistant: String,
+    },
 
     /// Initialize configuration files for loma.
     Init {
@@ -123,14 +128,14 @@ mod tests {
     #[test]
     fn parse_info_verbose() {
         let cli = Cli::try_parse_from(["loma", "info", "--verbose"]).unwrap();
-        assert!(matches!(cli.command, Commands::Info { verbose: true }));
+        assert!(matches!(cli.command, Some(Commands::Info { verbose: true })));
     }
 
     #[test]
     fn parse_run_default_mode() {
         let cli = Cli::try_parse_from(["loma", "run"]).unwrap();
         match cli.command {
-            Commands::Run { mode } => assert_eq!(mode, "development"),
+            Some(Commands::Run { mode }) => assert_eq!(mode, "development"),
             _ => panic!("expected Run"),
         }
     }
@@ -139,7 +144,7 @@ mod tests {
     fn parse_api_custom_port() {
         let cli = Cli::try_parse_from(["loma", "api", "--port", "8080"]).unwrap();
         match cli.command {
-            Commands::Api { port } => assert_eq!(port, 8080),
+            Some(Commands::Api { port }) => assert_eq!(port, 8080),
             _ => panic!("expected Api"),
         }
     }
@@ -148,7 +153,7 @@ mod tests {
     fn parse_status() {
         let cli = Cli::try_parse_from(["loma", "status"]).unwrap();
         match cli.command {
-            Commands::Status { assistant } => assert_eq!(assistant, "claude"),
+            Some(Commands::Status { assistant }) => assert_eq!(assistant, "claude"),
             _ => panic!("expected Status"),
         }
     }
@@ -157,8 +162,29 @@ mod tests {
     fn parse_install() {
         let cli = Cli::try_parse_from(["loma", "install"]).unwrap();
         match cli.command {
-            Commands::Install { assistant } => assert_eq!(assistant, "claude"),
+            Some(Commands::Install { assistant }) => assert_eq!(assistant, "claude"),
             _ => panic!("expected Install"),
         }
+    }
+
+    #[test]
+    fn parse_gen_custom_assistant() {
+        let cli = Cli::try_parse_from(["loma", "gen", "copilot"]).unwrap();
+        match cli.command {
+            Some(Commands::Gen { assistant }) => assert_eq!(assistant, "copilot"),
+            _ => panic!("expected Gen"),
+        }
+    }
+
+    #[test]
+    fn parse_version_long() {
+        let cli = Cli::try_parse_from(["loma", "--version"]).unwrap();
+        assert!(cli.version);
+    }
+
+    #[test]
+    fn parse_version_short() {
+        let cli = Cli::try_parse_from(["loma", "-v"]).unwrap();
+        assert!(cli.version);
     }
 }

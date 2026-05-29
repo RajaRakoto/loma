@@ -20,10 +20,17 @@ async fn main() -> Result<()> {
 
     info!("Starting loma v{}", loma::VERSION);
 
+    loma::utils::banner::showBanner();
+
     let cli = Cli::parse();
 
+    if cli.version {
+        println!("loma v{}", loma::VERSION);
+        return Ok(());
+    }
+
     match cli.command {
-        Commands::Info { verbose } => {
+        Some(Commands::Info { verbose }) => {
             if verbose {
                 println!("Name:        {}", loma::NAME);
                 println!("Version:     {}", loma::VERSION);
@@ -34,59 +41,65 @@ async fn main() -> Result<()> {
             }
         }
 
-        Commands::Run { mode } => {
+        Some(Commands::Run { mode }) => {
             info!("Running in '{}' mode", mode);
             println!("Running in {} mode", mode);
             // 👉 Add your business logic here
         }
 
-        Commands::Api { port } => {
+        Some(Commands::Api { port }) => {
             info!("Starting API server on port {}", port);
             loma::api::start_server(port).await?;
         }
 
-        Commands::Install { assistant } => {
+        Some(Commands::Install { assistant }) => {
             loma::commands::runInstall(&assistant)?;
         }
 
-        Commands::Remove { assistant } => {
+        Some(Commands::Remove { assistant }) => {
             loma::commands::runRemove(&assistant)?;
         }
 
-        Commands::Reinstall { assistant } => {
+        Some(Commands::Reinstall { assistant }) => {
             loma::commands::runReinstall(&assistant)?;
         }
 
-        Commands::Backup { assistant } => {
+        Some(Commands::Backup { assistant }) => {
             loma::commands::runBackup(&assistant)?;
         }
 
-        Commands::Restore { assistant } => {
+        Some(Commands::Restore { assistant }) => {
             loma::commands::runRestore(&assistant)?;
         }
 
-        Commands::Status { assistant } => {
+        Some(Commands::Status { assistant }) => {
             loma::commands::runStatus(&assistant)?;
         }
 
-        Commands::Health => {
+        Some(Commands::Health) => {
             loma::commands::runHealth()?;
         }
 
-        Commands::Update { assistant } => {
+        Some(Commands::Update { assistant }) => {
             loma::commands::runUpdate(&assistant)?;
         }
 
-        Commands::Optimize { assistant } => {
+        Some(Commands::Optimize { assistant }) => {
             loma::commands::runOptimize(&assistant)?;
         }
 
-        Commands::Gen => {
-            loma::commands::runGen()?;
+        Some(Commands::Gen { assistant }) => {
+            loma::commands::runGen(&assistant)?;
         }
 
-        Commands::Init { assistant } => {
+        Some(Commands::Init { assistant }) => {
             loma::commands::runInit(&assistant)?;
+        }
+
+        None => {
+            use clap::CommandFactory;
+            Cli::command().print_help()?;
+            println!();
         }
     }
 
