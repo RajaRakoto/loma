@@ -43,35 +43,78 @@ pub enum Commands {
         port: u16,
     },
 
-    /// Install Claude Code.
-    Install,
+    /// Install an AI assistant.
+    Install {
+        /// The assistant to target.
+        #[arg(default_value = "claude")]
+        assistant: String,
+    },
 
-    /// Completely remove Claude Code and all associated files.
-    Remove,
+    /// Completely remove an AI assistant and all associated files.
+    Remove {
+        /// The assistant to target.
+        #[arg(default_value = "claude")]
+        assistant: String,
+    },
 
-    /// Remove then cleanly reinstall Claude Code.
-    Reinstall,
+    /// Remove then cleanly reinstall an AI assistant.
+    Reinstall {
+        /// The assistant to target.
+        #[arg(default_value = "claude")]
+        assistant: String,
+    },
 
-    /// Back up Claude Code configuration (interactive).
-    Backup,
+    /// Back up AI assistant configuration.
+    Backup {
+        /// The assistant to target.
+        #[arg(default_value = "claude")]
+        assistant: String,
+    },
 
-    /// Restore a previous backup (interactive).
-    Restore,
+    /// Restore a previous backup of an AI assistant.
+    Restore {
+        /// The assistant to target.
+        #[arg(default_value = "claude")]
+        assistant: String,
+    },
 
-    /// Show current status of Claude Code.
-    Status,
+    /// Show current status of an AI assistant.
+    Status {
+        /// The assistant to target.
+        #[arg(default_value = "claude")]
+        assistant: String,
+    },
 
-    /// Perform diagnostic health checks on the environment.
-    Health,
+    /// Perform diagnostic health checks on the assistant's environment.
+    Health {
+        /// The assistant to target.
+        #[arg(default_value = "claude")]
+        assistant: String,
+    },
 
-    /// Update Claude Code.
-    Update,
+    /// Update an AI assistant.
+    Update {
+        /// The assistant to target.
+        #[arg(default_value = "claude")]
+        assistant: String,
+    },
+
+    /// Optimize configuration for an AI assistant.
+    Optimize {
+        /// The assistant to target.
+        #[arg(default_value = "claude")]
+        assistant: String,
+    },
 
     /// Generate systemd template or settings config.
     Gen,
 
     /// Initialize configuration files for loma.
-    Init,
+    Init {
+        /// The assistant to target.
+        #[arg(default_value = "claude")]
+        assistant: String,
+    },
 }
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
@@ -108,12 +151,18 @@ mod tests {
     #[test]
     fn parse_status() {
         let cli = Cli::try_parse_from(["loma", "status"]).unwrap();
-        assert!(matches!(cli.command, Commands::Status));
+        match cli.command {
+            Commands::Status { assistant } => assert_eq!(assistant, "claude"),
+            _ => panic!("expected Status"),
+        }
     }
 
     #[test]
     fn parse_install() {
         let cli = Cli::try_parse_from(["loma", "install"]).unwrap();
-        assert!(matches!(cli.command, Commands::Install));
+        match cli.command {
+            Commands::Install { assistant } => assert_eq!(assistant, "claude"),
+            _ => panic!("expected Install"),
+        }
     }
 }

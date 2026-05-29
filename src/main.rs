@@ -5,7 +5,8 @@ use tracing::info;
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    // Load .env file if present (silently ignored if missing)
+    // Load isolated loma.env first, falling back to local .env if missing
+    dotenvy::from_path(".loma/loma.env").ok();
     dotenvy::dotenv().ok();
 
     // Initialize tracing from RUST_LOG env var,
@@ -44,44 +45,48 @@ async fn main() -> Result<()> {
             loma::api::start_server(port).await?;
         }
 
-        Commands::Install => {
-            loma::commands::runInstall()?;
+        Commands::Install { assistant } => {
+            loma::commands::runInstall(&assistant)?;
         }
 
-        Commands::Remove => {
-            loma::commands::runRemove()?;
+        Commands::Remove { assistant } => {
+            loma::commands::runRemove(&assistant)?;
         }
 
-        Commands::Reinstall => {
-            loma::commands::runReinstall()?;
+        Commands::Reinstall { assistant } => {
+            loma::commands::runReinstall(&assistant)?;
         }
 
-        Commands::Backup => {
-            loma::commands::runBackup()?;
+        Commands::Backup { assistant } => {
+            loma::commands::runBackup(&assistant)?;
         }
 
-        Commands::Restore => {
-            loma::commands::runRestore()?;
+        Commands::Restore { assistant } => {
+            loma::commands::runRestore(&assistant)?;
         }
 
-        Commands::Status => {
-            loma::commands::runStatus()?;
+        Commands::Status { assistant } => {
+            loma::commands::runStatus(&assistant)?;
         }
 
-        Commands::Health => {
-            loma::commands::runHealth()?;
+        Commands::Health { assistant } => {
+            loma::commands::runHealth(&assistant)?;
         }
 
-        Commands::Update => {
-            loma::commands::runUpdate()?;
+        Commands::Update { assistant } => {
+            loma::commands::runUpdate(&assistant)?;
+        }
+
+        Commands::Optimize { assistant } => {
+            loma::commands::runOptimize(&assistant)?;
         }
 
         Commands::Gen => {
             loma::commands::runGen()?;
         }
 
-        Commands::Init => {
-            loma::commands::runInit()?;
+        Commands::Init { assistant } => {
+            loma::commands::runInit(&assistant)?;
         }
     }
 
