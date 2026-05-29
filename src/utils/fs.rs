@@ -1,7 +1,7 @@
+use chrono::Local;
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
-use chrono::Local;
 
 pub const CLAUDE_CONFIG_DIRS: &[&str] = &[".claude"];
 pub const CLAUDE_CONFIG_FILES: &[&str] = &[".claude.json"];
@@ -22,28 +22,80 @@ pub const CLAUDE_BINARY_PATHS: &[&str] = &[
     ".bun/bin/claude",
 ];
 
-pub fn cmdExists(cmd: &str) -> bool {
-    Command::new("sh")
-        .args(["-c", &format!("command -v {cmd}")])
-        .stdout(std::process::Stdio::null())
-        .stderr(std::process::Stdio::null())
-        .status()
-        .map(|s| s.success())
-        .unwrap_or(false)
+/// A robust, platform-agnostic home directory resolver.
+pub fn get_home_dir() -> Option<PathBuf> {
+    std::env::var_os("HOME")
+        .or_else(|| std::env::var_os("USERPROFILE"))
+        .map(PathBuf::from)
+        .or_else(|| {
+            let drive = std::env::var_os("HOMEDRIVE");
+            let path = std::env::var_os("HOMEPATH");
+            match (drive, path) {
+                (Some(d), Some(p)) => {
+                    let mut pb = PathBuf::from(d);
+                    pb.push(p);
+                    Some(pb)
+                }
+                _ => None,
+            }
+        })
 }
 
-pub fn getClaudeBinary() -> String {
-    if cmdExists("claude") {
-        if let Ok(output) = Command::new("which").arg("claude").output() {
-            let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
-            if !path.is_empty() {
-                return path;
+/// A native, platform-agnostic check to see if a command exists in the system PATH.
+pub fn cmdExists(cmd: &str) -> bool {
+    let path_var = match std::env::var_os("PATH") {
+        Some(p) => p,
+        None => return false,
+    };
+
+    let paths = std::env::split_paths(&path_var);
+
+    // Extensions to check (especially on Windows)
+    let extensions: &[&str] = if cfg!(windows) {
+        &[".exe", ".cmd", ".bat", ".com", ""]
+    } else {
+        &[""]
+    };
+
+    for path in paths {
+        for ext in extensions {
+            let exe_name = format!("{}{}", cmd, ext);
+            let exe_path = path.join(&exe_name);
+            if exe_path.is_file() {
+                return true;
             }
         }
     }
 
-    if let Some(home) = std::env::var_os("HOME") {
-        let homePath = PathBuf::from(home);
+    false
+}
+
+/// A native, platform-agnostic resolver to locate the `claude` binary.
+pub fn getClaudeBinary() -> String {
+    // 1. Check PATH env variable
+    let path_var = match std::env::var_os("PATH") {
+        Some(p) => p,
+        None => return String::new(),
+    };
+    let paths = std::env::split_paths(&path_var);
+    let extensions: &[&str] = if cfg!(windows) {
+        &[".exe", ".cmd", ".bat", ".com", ""]
+    } else {
+        &[""]
+    };
+
+    for path in paths {
+        for ext in extensions {
+            let exe_name = format!("claude{}", ext);
+            let exe_path = path.join(&exe_name);
+            if exe_path.is_file() {
+                return exe_path.to_string_lossy().to_string();
+            }
+        }
+    }
+
+    // 2. Check standard home paths
+    if let Some(homePath) = get_home_dir() {
         for p in CLAUDE_BINARY_PATHS {
             let fullPath = if p.starts_with('/') {
                 PathBuf::from(p)
@@ -52,6 +104,15 @@ pub fn getClaudeBinary() -> String {
             };
             if fullPath.exists() {
                 return fullPath.to_string_lossy().to_string();
+            }
+
+            if cfg!(windows) {
+                for ext in &[".cmd", ".exe", ".bat"] {
+                    let win_path = fullPath.with_extension(ext.trim_start_matches('.'));
+                    if win_path.exists() {
+                        return win_path.to_string_lossy().to_string();
+                    }
+                }
             }
         }
     }
@@ -64,18 +125,37 @@ pub fn claudeIsInstalled() -> bool {
 }
 
 pub fn requireRootFor(path: &str) -> crate::Result<()> {
+    if cfg!(windows) {
+        let p = std::path::Path::new(path);
+        if p.is_dir() {
+            fs::remove_dir_all(p)?;
+            crate::utils::display::success(&format!("Removed directory: {}", path));
+        } else if p.is_file() || p.is_symlink() {
+            fs::remove_file(p)?;
+            crate::utils::display::success(&format!("Removed file: {}", path));
+        }
+        return Ok(());
+    }
+
+    // Unix implementation
     if path.starts_with("/usr/") || path.starts_with("/etc/") {
         let euid = Command::new("id")
             .arg("-u")
             .output()
-            .map(|o| String::from_utf8_lossy(&o.stdout).trim().parse::<u32>().unwrap_or(999))
+            .map(|o| {
+                String::from_utf8_lossy(&o.stdout)
+                    .trim()
+                    .parse::<u32>()
+                    .unwrap_or(999)
+            })
             .unwrap_or(999);
 
         if euid != 0 {
-            crate::utils::display::warn(&format!("Removing {} requires root privileges (sudo).", path));
-            let status = Command::new("sudo")
-                .args(["rm", "-rf", path])
-                .status()?;
+            crate::utils::display::warn(&format!(
+                "Removing {} requires root privileges (sudo).",
+                path
+            ));
+            let status = Command::new("sudo").args(["rm", "-rf", path]).status()?;
             if status.success() {
                 crate::utils::display::success(&format!("Removed (sudo): {}", path));
                 Ok(())
@@ -83,9 +163,7 @@ pub fn requireRootFor(path: &str) -> crate::Result<()> {
                 Err(crate::Error::other(format!("Failed to remove: {path}")))
             }
         } else {
-            let status = Command::new("rm")
-                .args(["-rf", path])
-                .status()?;
+            let status = Command::new("rm").args(["-rf", path]).status()?;
             if status.success() {
                 crate::utils::display::success(&format!("Removed: {}", path));
                 Ok(())
@@ -94,9 +172,7 @@ pub fn requireRootFor(path: &str) -> crate::Result<()> {
             }
         }
     } else {
-        let status = Command::new("rm")
-            .args(["-rf", path])
-            .status()?;
+        let status = Command::new("rm").args(["-rf", path]).status()?;
         if status.success() {
             crate::utils::display::success(&format!("Removed: {}", path));
             Ok(())
@@ -109,13 +185,17 @@ pub fn requireRootFor(path: &str) -> crate::Result<()> {
 pub fn requireNpm() -> crate::Result<()> {
     if !cmdExists("npm") {
         crate::utils::display::error("npm is not installed. Please install Node.js >= 18 first.");
-        crate::utils::display::error("  sudo dnf install nodejs");
+        if cfg!(windows) {
+            crate::utils::display::error(
+                "Please download and run the Node.js installer from nodejs.org.",
+            );
+        } else {
+            crate::utils::display::error("  sudo dnf install nodejs");
+        }
         return Err(crate::Error::other("npm not found"));
     }
 
-    let output = Command::new("node")
-        .arg("--version")
-        .output()?;
+    let output = Command::new("node").arg("--version").output()?;
     let versionStr = String::from_utf8_lossy(&output.stdout);
     let cleanVersion = versionStr.trim().trim_start_matches('v');
     let majorVersion = cleanVersion
@@ -136,6 +216,12 @@ pub fn requireNpm() -> crate::Result<()> {
 }
 
 pub fn cleanShellConfigs() -> crate::Result<()> {
+    // Windows doesn't typically use shell files like .bashrc / .zshrc unless running MSYS/Cygwin/WSL.
+    // Early exit on Windows to ensure safe executions.
+    if cfg!(windows) {
+        return Ok(());
+    }
+
     crate::utils::display::step("Cleaning shell configuration files");
     let patterns = &[
         "claude",
@@ -144,8 +230,7 @@ pub fn cleanShellConfigs() -> crate::Result<()> {
         "CLAUDE",
     ];
 
-    let home = std::env::var("HOME").map_err(|_| crate::Error::other("HOME environment variable not set"))?;
-    let homePath = PathBuf::from(home);
+    let homePath = get_home_dir().ok_or_else(|| crate::Error::other("Home directory not found"))?;
 
     let shellConfigs = &[
         homePath.join(".bashrc"),

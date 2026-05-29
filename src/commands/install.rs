@@ -1,22 +1,26 @@
 use crate::utils::display;
-use crate::utils::fs as ccmFs;
-use std::process::Command;
+use crate::utils::fs as lomaFs;
 use std::path::PathBuf;
+use std::process::Command;
 
 pub fn runInstall() -> crate::Result<()> {
     display::title("Installing Claude Code");
 
     display::step("Checking environment");
 
-    if ccmFs::claudeIsInstalled() {
-        let binaryPath = ccmFs::getClaudeBinary();
-        display::warn(&format!("Claude Code appears to already be installed: {}", binaryPath));
+    if lomaFs::claudeIsInstalled() {
+        let binaryPath = lomaFs::getClaudeBinary();
+        display::warn(&format!(
+            "Claude Code appears to already be installed: {}",
+            binaryPath
+        ));
 
-        let versionOutput = Command::new(&binaryPath)
-            .arg("--version")
-            .output();
+        let versionOutput = Command::new(&binaryPath).arg("--version").output();
         if let Ok(o) = versionOutput {
-            display::warn(&format!("Version: {}", String::from_utf8_lossy(&o.stdout).trim()));
+            display::warn(&format!(
+                "Version: {}",
+                String::from_utf8_lossy(&o.stdout).trim()
+            ));
         } else {
             display::warn("Version: unknown");
         }
@@ -34,19 +38,19 @@ pub fn runInstall() -> crate::Result<()> {
     let mut staleFound = false;
     if let Some(home) = std::env::var_os("HOME") {
         let homePath = PathBuf::from(home);
-        for d in ccmFs::CLAUDE_CONFIG_DIRS {
+        for d in lomaFs::CLAUDE_CONFIG_DIRS {
             if homePath.join(d).exists() {
                 display::warn(&format!("Leftover directory found: ~/.{}", d));
                 staleFound = true;
             }
         }
-        for d in ccmFs::CLAUDE_DATA_DIRS {
+        for d in lomaFs::CLAUDE_DATA_DIRS {
             if homePath.join(d).exists() {
                 display::warn(&format!("Leftover directory found: ~/{}", d));
                 staleFound = true;
             }
         }
-        for f in ccmFs::CLAUDE_CONFIG_FILES {
+        for f in lomaFs::CLAUDE_CONFIG_FILES {
             if homePath.join(f).exists() {
                 display::warn(&format!("Leftover file found: ~/.{}", f));
                 staleFound = true;
@@ -63,26 +67,35 @@ pub fn runInstall() -> crate::Result<()> {
         display::success("No leftover files detected. Environment is clean.");
     }
 
-    // Ensure curl is available
-    if !ccmFs::cmdExists("curl") {
-        display::step("Installing curl");
-        let status = Command::new("sudo")
-            .args(["dnf", "install", "-y", "curl"])
-            .status()?;
-        if !status.success() {
-            display::error("Unable to install curl.");
-            return Err(crate::Error::other("Failed to install curl"));
+    let installStatus = if cfg!(windows) {
+        display::step("Installing Claude Code globally via npm");
+        display::info("Command: npm install -g @anthropic-ai/claude-code");
+        display::divider();
+        Command::new("cmd")
+            .args(["/C", "npm install -g @anthropic-ai/claude-code"])
+            .status()?
+    } else {
+        // Ensure curl is available
+        if !lomaFs::cmdExists("curl") {
+            display::step("Installing curl");
+            let status = Command::new("sudo")
+                .args(["dnf", "install", "-y", "curl"])
+                .status()?;
+            if !status.success() {
+                display::error("Unable to install curl.");
+                return Err(crate::Error::other("Failed to install curl"));
+            }
         }
-    }
 
-    // Run the official Anthropic install script
-    display::step("Downloading and installing Claude Code");
-    display::info("Command: curl -fsSL https://claude.ai/install.sh | bash");
-    display::divider();
+        // Run the official Anthropic install script
+        display::step("Downloading and installing Claude Code");
+        display::info("Command: curl -fsSL https://claude.ai/install.sh | bash");
+        display::divider();
 
-    let installStatus = Command::new("sh")
-        .args(["-c", "curl -fsSL https://claude.ai/install.sh | bash"])
-        .status()?;
+        Command::new("sh")
+            .args(["-c", "curl -fsSL https://claude.ai/install.sh | bash"])
+            .status()?
+    };
 
     display::divider();
 
@@ -90,17 +103,15 @@ pub fn runInstall() -> crate::Result<()> {
         display::success("Claude Code installed successfully!");
     } else {
         display::error("Installation failed.");
-        return Err(crate::Error::other("Official install script failed"));
+        return Err(crate::Error::other("Installation command failed"));
     }
 
     // Post-install check
     display::step("Post-install verification");
 
-    let binaryPathAfter = ccmFs::getClaudeBinary();
+    let binaryPathAfter = lomaFs::getClaudeBinary();
     if !binaryPathAfter.is_empty() {
-        let versionOutput = Command::new(&binaryPathAfter)
-            .arg("--version")
-            .output();
+        let versionOutput = Command::new(&binaryPathAfter).arg("--version").output();
         let ver = versionOutput
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
             .unwrap_or_else(|_| "unknown".to_string());

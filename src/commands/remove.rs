@@ -1,13 +1,13 @@
 use crate::utils::display;
-use crate::utils::fs as ccmFs;
-use std::process::Command;
-use std::path::{Path, PathBuf};
+use crate::utils::fs as lomaFs;
 use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 pub fn runRemove() -> crate::Result<()> {
     display::title("Complete Removal of Claude Code");
 
-    let isInstalled = ccmFs::claudeIsInstalled();
+    let isInstalled = lomaFs::claudeIsInstalled();
     let hasConfigDir = std::env::var("HOME")
         .map(|h| PathBuf::from(h).join(".claude").exists())
         .unwrap_or(false);
@@ -43,15 +43,18 @@ pub fn runRemove() -> crate::Result<()> {
     removeBinaries()?;
     removeDnfRepo()?;
     removeConfigsAndData()?;
-    ccmFs::cleanShellConfigs()?;
+    lomaFs::cleanShellConfigs()?;
     removeServices()?;
 
     display::divider();
     display::step("Post-removal verification");
     let mut clean = true;
 
-    if ccmFs::claudeIsInstalled() {
-        display::warn(&format!("A 'claude' binary is still resolved: {}", ccmFs::getClaudeBinary()));
+    if lomaFs::claudeIsInstalled() {
+        display::warn(&format!(
+            "A 'claude' binary is still resolved: {}",
+            lomaFs::getClaudeBinary()
+        ));
         clean = false;
     } else {
         display::success("'claude' binary: not found.");
@@ -59,19 +62,19 @@ pub fn runRemove() -> crate::Result<()> {
 
     if let Some(home) = std::env::var_os("HOME") {
         let homePath = PathBuf::from(home);
-        for d in ccmFs::CLAUDE_CONFIG_DIRS {
+        for d in lomaFs::CLAUDE_CONFIG_DIRS {
             if homePath.join(d).exists() {
                 display::warn(&format!("Directory still present: ~/.{}", d));
                 clean = false;
             }
         }
-        for d in ccmFs::CLAUDE_DATA_DIRS {
+        for d in lomaFs::CLAUDE_DATA_DIRS {
             if homePath.join(d).exists() {
                 display::warn(&format!("Directory still present: ~/{}", d));
                 clean = false;
             }
         }
-        for f in ccmFs::CLAUDE_CONFIG_FILES {
+        for f in lomaFs::CLAUDE_CONFIG_FILES {
             if homePath.join(f).exists() {
                 display::warn(&format!("File still present: ~/.{}", f));
                 clean = false;
@@ -93,12 +96,15 @@ pub fn runRemove() -> crate::Result<()> {
 fn removeBinaries() -> crate::Result<()> {
     display::step("Removing binaries");
 
-    if ccmFs::cmdExists("npm") {
+    if lomaFs::cmdExists("npm") {
         let checkPkg = Command::new("npm")
             .args(["list", "-g", "@anthropic-ai/claude-code"])
             .output();
         let isGlobal = checkPkg
-            .map(|o| o.status.success() && String::from_utf8_lossy(&o.stdout).contains("@anthropic-ai/claude-code"))
+            .map(|o| {
+                o.status.success()
+                    && String::from_utf8_lossy(&o.stdout).contains("@anthropic-ai/claude-code")
+            })
             .unwrap_or(false);
 
         if isGlobal {
@@ -115,42 +121,50 @@ fn removeBinaries() -> crate::Result<()> {
 
     if let Some(home) = std::env::var_os("HOME") {
         let homePath = PathBuf::from(home);
-        for p in ccmFs::CLAUDE_BINARY_PATHS {
+        for p in lomaFs::CLAUDE_BINARY_PATHS {
             let fullPath = if p.starts_with('/') {
                 PathBuf::from(p)
             } else {
                 homePath.join(p)
             };
             if fullPath.exists() || fullPath.is_symlink() {
-                let _ = ccmFs::requireRootFor(&fullPath.to_string_lossy());
+                let _ = lomaFs::requireRootFor(&fullPath.to_string_lossy());
             }
         }
     }
 
-    let remaining = ccmFs::getClaudeBinary();
+    let remaining = lomaFs::getClaudeBinary();
     if !remaining.is_empty() {
         display::warn(&format!("Binary still found on PATH: {}", remaining));
-        let _ = ccmFs::requireRootFor(&remaining);
+        let _ = lomaFs::requireRootFor(&remaining);
     }
 
     Ok(())
 }
 
 fn removeDnfRepo() -> crate::Result<()> {
+    if !cfg!(target_os = "linux") {
+        return Ok(());
+    }
     display::step("Removing Anthropic DNF/YUM repository");
-    for repo in ccmFs::CLAUDE_DNF_REPO_FILES {
+    for repo in lomaFs::CLAUDE_DNF_REPO_FILES {
         let p = Path::new(repo);
         if p.exists() {
             let euid = Command::new("id")
                 .arg("-u")
                 .output()
-                .map(|o| String::from_utf8_lossy(&o.stdout).trim().parse::<u32>().unwrap_or(999))
+                .map(|o| {
+                    String::from_utf8_lossy(&o.stdout)
+                        .trim()
+                        .parse::<u32>()
+                        .unwrap_or(999)
+                })
                 .unwrap_or(999);
 
             let status = if euid != 0 {
                 Command::new("sudo").args(["rm", "-f", repo]).status()?
             } else {
-                Command::new("rm").args(["-f", repo]).status()?
+                Command::new("rm").args(["rm", "-f", repo]).status()?
             };
 
             if status.success() {
@@ -161,7 +175,7 @@ fn removeDnfRepo() -> crate::Result<()> {
         }
     }
 
-    if ccmFs::cmdExists("rpm") && ccmFs::cmdExists("dnf") {
+    if lomaFs::cmdExists("rpm") && lomaFs::cmdExists("dnf") {
         let checkPkg = Command::new("rpm").args(["-q", "claude-code"]).output();
         if let Ok(o) = checkPkg {
             if o.status.success() {
@@ -186,7 +200,7 @@ pub fn removeConfigsAndData() -> crate::Result<()> {
     if let Some(home) = std::env::var_os("HOME") {
         let homePath = PathBuf::from(home);
 
-        for d in ccmFs::CLAUDE_CONFIG_DIRS {
+        for d in lomaFs::CLAUDE_CONFIG_DIRS {
             let path = homePath.join(d);
             if path.exists() {
                 let _ = fs::remove_dir_all(&path);
@@ -196,7 +210,7 @@ pub fn removeConfigsAndData() -> crate::Result<()> {
             }
         }
 
-        for f in ccmFs::CLAUDE_CONFIG_FILES {
+        for f in lomaFs::CLAUDE_CONFIG_FILES {
             let path = homePath.join(f);
             if path.exists() {
                 let _ = fs::remove_file(&path);
@@ -206,7 +220,7 @@ pub fn removeConfigsAndData() -> crate::Result<()> {
             }
         }
 
-        for d in ccmFs::CLAUDE_DATA_DIRS {
+        for d in lomaFs::CLAUDE_DATA_DIRS {
             let path = homePath.join(d);
             if path.exists() {
                 let _ = fs::remove_dir_all(&path);
@@ -238,10 +252,13 @@ pub fn removeConfigsAndData() -> crate::Result<()> {
 }
 
 fn removeServices() -> crate::Result<()> {
+    if !cfg!(target_os = "linux") {
+        return Ok(());
+    }
     display::step("Checking for systemd services");
     let services = &["claude", "claude-code", "anthropic-claude"];
 
-    if ccmFs::cmdExists("systemctl") {
+    if lomaFs::cmdExists("systemctl") {
         for svc in services {
             let check = Command::new("systemctl")
                 .args(["list-units", "--all", "--full"])
@@ -250,9 +267,15 @@ fn removeServices() -> crate::Result<()> {
                 let stdout = String::from_utf8_lossy(&o.stdout);
                 if stdout.contains(svc) {
                     display::warn(&format!("Service found: {}", svc));
-                    let _ = Command::new("sudo").args(["systemctl", "stop", svc]).status();
-                    let _ = Command::new("sudo").args(["systemctl", "disable", svc]).status();
-                    let _ = Command::new("sudo").args(["systemctl", "daemon-reload"]).status();
+                    let _ = Command::new("sudo")
+                        .args(["systemctl", "stop", svc])
+                        .status();
+                    let _ = Command::new("sudo")
+                        .args(["systemctl", "disable", svc])
+                        .status();
+                    let _ = Command::new("sudo")
+                        .args(["systemctl", "daemon-reload"])
+                        .status();
                     display::success(&format!("Service {} stopped and disabled.", svc));
                 }
             }
@@ -276,7 +299,7 @@ fn removeServices() -> crate::Result<()> {
                     let entryPath = entry.path();
                     let name = entryPath.file_name().unwrap_or_default().to_string_lossy();
                     if name.contains("claude") {
-                        let _ = ccmFs::requireRootFor(&entryPath.to_string_lossy());
+                        let _ = lomaFs::requireRootFor(&entryPath.to_string_lossy());
                     }
                 }
             }
@@ -294,7 +317,12 @@ fn cleanSubdirPattern(dir: &str, pattern: &str, maxDepth: usize) {
     let _ = cleanSubdirPatternRecursive(path, pattern, 1, maxDepth);
 }
 
-fn cleanSubdirPatternRecursive(path: &Path, pattern: &str, currentDepth: usize, maxDepth: usize) -> std::io::Result<()> {
+fn cleanSubdirPatternRecursive(
+    path: &Path,
+    pattern: &str,
+    currentDepth: usize,
+    maxDepth: usize,
+) -> std::io::Result<()> {
     if currentDepth > maxDepth {
         return Ok(());
     }
@@ -306,7 +334,8 @@ fn cleanSubdirPatternRecursive(path: &Path, pattern: &str, currentDepth: usize, 
             if name.contains(pattern) {
                 let _ = fs::remove_dir_all(&entryPath).or_else(|_| fs::remove_file(&entryPath));
             } else if entryPath.is_dir() {
-                let _ = cleanSubdirPatternRecursive(&entryPath, pattern, currentDepth + 1, maxDepth);
+                let _ =
+                    cleanSubdirPatternRecursive(&entryPath, pattern, currentDepth + 1, maxDepth);
             }
         }
     }

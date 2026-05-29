@@ -1,8 +1,8 @@
 use crate::utils::display;
-use crate::utils::fs as ccmFs;
-use std::process::Command;
+use crate::utils::fs as lomaFs;
 use std::fs;
 use std::path::PathBuf;
+use std::process::Command;
 
 pub fn runHealth() -> crate::Result<()> {
     display::title("Claude Code Environment Health Check");
@@ -11,7 +11,7 @@ pub fn runHealth() -> crate::Result<()> {
 
     // 1. Check Node.js & npm
     display::step("Checking Node.js & npm...");
-    if ccmFs::requireNpm().is_ok() {
+    if lomaFs::requireNpm().is_ok() {
         display::success("Node.js >= 18 and npm are present and healthy.");
     } else {
         display::error("Node.js or npm validation failed.");
@@ -20,18 +20,22 @@ pub fn runHealth() -> crate::Result<()> {
 
     // 2. Check curl
     display::step("Checking curl...");
-    if ccmFs::cmdExists("curl") {
+    if lomaFs::cmdExists("curl") {
         display::success("curl is available.");
     } else {
-        display::warn("curl is missing. Installation requires curl (will try to install it automatically).");
+        display::warn(
+            "curl is missing. Installation requires curl (will try to install it automatically).",
+        );
     }
 
     // 3. Check Fedora/DNF
     display::step("Checking package manager (dnf)...");
-    if ccmFs::cmdExists("dnf") {
+    if lomaFs::cmdExists("dnf") {
         display::success("dnf package manager is available.");
     } else {
-        display::warn("dnf is not available. System-level integrations (repos, package) might fail.");
+        display::warn(
+            "dnf is not available. System-level integrations (repos, package) might fail.",
+        );
     }
 
     // 4. Check write permissions to HOME
@@ -56,7 +60,7 @@ pub fn runHealth() -> crate::Result<()> {
 
     // 5. Check internet connectivity to registry.npmjs.org
     display::step("Checking internet connectivity to npm registry...");
-    if ccmFs::cmdExists("curl") {
+    if lomaFs::cmdExists("curl") {
         let check = Command::new("curl")
             .args(["-I", "-s", "--max-time", "5", "https://registry.npmjs.org"])
             .output();
@@ -65,7 +69,9 @@ pub fn runHealth() -> crate::Result<()> {
                 display::success("Internet connection to npm registry is active.");
             }
             _ => {
-                display::warn("Failed to connect to registry.npmjs.org. Installation or updates might fail.");
+                display::warn(
+                    "Failed to connect to registry.npmjs.org. Installation or updates might fail.",
+                );
             }
         }
     }

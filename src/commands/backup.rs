@@ -1,26 +1,26 @@
 use crate::utils::display;
-use crate::utils::fs as ccmFs;
-use std::process::Command;
-use std::path::{Path, PathBuf};
+use crate::utils::fs as lomaFs;
 use chrono::Local;
+use std::path::Path;
+use std::process::Command;
 
 pub fn runBackup() -> crate::Result<()> {
     display::title("Claude Code Backup");
 
-    let home = std::env::var("HOME").map_err(|_| crate::Error::other("HOME environment variable not set"))?;
-    let homePath = PathBuf::from(&home);
+    let homePath = lomaFs::get_home_dir()
+        .ok_or_else(|| crate::Error::other("HOME environment variable not set"))?;
 
     let settingsFile = homePath.join(".claude/settings.json");
     let settingsLocalFile = homePath.join(".claude/settings.local.json");
 
     // Check if there is something to back up
     let mut hasData = false;
-    for d in ccmFs::CLAUDE_CONFIG_DIRS {
+    for d in lomaFs::CLAUDE_CONFIG_DIRS {
         if homePath.join(d).exists() {
             hasData = true;
         }
     }
-    for f in ccmFs::CLAUDE_CONFIG_FILES {
+    for f in lomaFs::CLAUDE_CONFIG_FILES {
         if homePath.join(f).exists() {
             hasData = true;
         }
@@ -62,15 +62,15 @@ pub fn runBackup() -> crate::Result<()> {
 
     if choice == "1" {
         display::step("Backing up JSON config files (settings.json only)");
-        let mut filesToBackup = Vec::new();
+        let mut relativeFiles = Vec::new();
         if settingsFile.exists() {
-            filesToBackup.push(settingsFile.to_string_lossy().to_string());
+            relativeFiles.push("settings.json".to_string());
         }
         if settingsLocalFile.exists() {
-            filesToBackup.push(settingsLocalFile.to_string_lossy().to_string());
+            relativeFiles.push("settings.local.json".to_string());
         }
 
-        if filesToBackup.is_empty() {
+        if relativeFiles.is_empty() {
             display::error("No settings.json found in ~/.claude");
             return Err(crate::Error::other("No settings.json found"));
         }
@@ -78,9 +78,9 @@ pub fn runBackup() -> crate::Result<()> {
         let status = Command::new("tar")
             .arg("-czf")
             .arg(&archiveName)
-            .arg("--transform")
-            .arg("s|.*/||")
-            .args(&filesToBackup)
+            .arg("-C")
+            .arg(homePath.join(".claude"))
+            .args(&relativeFiles)
             .status()?;
 
         if status.success() {
@@ -91,33 +91,33 @@ pub fn runBackup() -> crate::Result<()> {
         }
     } else {
         display::step("Full backup");
-        let mut tarArgs = Vec::new();
-        for d in ccmFs::CLAUDE_CONFIG_DIRS {
+        let mut relativeTarArgs = Vec::new();
+        for d in lomaFs::CLAUDE_CONFIG_DIRS {
             let path = homePath.join(d);
             if path.exists() {
-                tarArgs.push(path.to_string_lossy().to_string());
+                relativeTarArgs.push(d.to_string());
             }
         }
-        for f in ccmFs::CLAUDE_CONFIG_FILES {
+        for f in lomaFs::CLAUDE_CONFIG_FILES {
             let path = homePath.join(f);
             if path.exists() {
-                tarArgs.push(path.to_string_lossy().to_string());
+                relativeTarArgs.push(f.to_string());
             }
         }
-        for d in ccmFs::CLAUDE_DATA_DIRS {
+        for d in lomaFs::CLAUDE_DATA_DIRS {
             let path = homePath.join(d);
             if path.exists() {
-                tarArgs.push(path.to_string_lossy().to_string());
+                relativeTarArgs.push(d.to_string());
             }
         }
 
-        if tarArgs.is_empty() {
+        if relativeTarArgs.is_empty() {
             display::error("No Claude Code files found to back up.");
             return Err(crate::Error::other("No files found to back up"));
         }
 
-        display::info("Items included in backup:");
-        for item in &tarArgs {
+        display::info("Items included in backup (relative to HOME):");
+        for item in &relativeTarArgs {
             println!("    {}", item);
         }
         println!();
@@ -125,7 +125,9 @@ pub fn runBackup() -> crate::Result<()> {
         let status = Command::new("tar")
             .arg("-czf")
             .arg(&archiveName)
-            .args(&tarArgs)
+            .arg("-C")
+            .arg(&homePath)
+            .args(&relativeTarArgs)
             .status()?;
 
         if status.success() {

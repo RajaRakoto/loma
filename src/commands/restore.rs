@@ -1,9 +1,9 @@
 use crate::utils::display;
-use crate::utils::fs as ccmFs;
-use std::process::Command;
-use std::path::{Path, PathBuf};
-use std::fs;
+use crate::utils::fs as lomaFs;
 use chrono::Local;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 
 pub fn runRestore() -> crate::Result<()> {
     display::title("Restore Claude Code Backup");
@@ -27,8 +27,11 @@ pub fn runRestore() -> crate::Result<()> {
     archives.sort();
 
     if archives.is_empty() {
-        display::error(&format!("No backup archives found in: {}", currentDir.to_string_lossy()));
-        display::info("Create a backup first with: ccm backup");
+        display::error(&format!(
+            "No backup archives found in: {}",
+            currentDir.to_string_lossy()
+        ));
+        display::info("Create a backup first with: loma backup");
         return Err(crate::Error::other("No backup archives found"));
     }
 
@@ -57,7 +60,10 @@ pub fn runRestore() -> crate::Result<()> {
     let mut choice = String::new();
     let selectedArchive: &Path;
     loop {
-        print!("\x1b[1;33m\x1b[1m  Select an archive [1-{}]: \x1b[0m", archives.len());
+        print!(
+            "\x1b[1;33m\x1b[1m  Select an archive [1-{}]: \x1b[0m",
+            archives.len()
+        );
         use std::io::{self, Write};
         let _ = io::stdout().flush();
         choice.clear();
@@ -74,7 +80,11 @@ pub fn runRestore() -> crate::Result<()> {
         display::warn("Invalid choice.");
     }
 
-    let archiveName = selectedArchive.file_name().unwrap_or_default().to_string_lossy().to_string();
+    let archiveName = selectedArchive
+        .file_name()
+        .unwrap_or_default()
+        .to_string_lossy()
+        .to_string();
     display::info(&format!("Selected archive: {}", archiveName));
     println!();
 
@@ -99,49 +109,59 @@ pub fn runRestore() -> crate::Result<()> {
 
     display::step("Restoring files");
 
-    let home = std::env::var("HOME").map_err(|_| crate::Error::other("HOME env not set"))?;
-    let homePath = PathBuf::from(&home);
+    let homePath = lomaFs::get_home_dir()
+        .ok_or_else(|| crate::Error::other("HOME environment variable not set"))?;
     let configDir = homePath.join(".claude");
     let configFile = homePath.join(".claude.json");
 
     if configDir.exists() || configFile.exists() {
         let safetyTimestamp = Local::now().format("%Y%m%d-%H%M%S").to_string();
         let preBackupName = format!("claude-pre-restore-{}.tar.gz", safetyTimestamp);
-        display::info(&format!("Creating safety backup before restore: {}", preBackupName));
+        display::info(&format!(
+            "Creating safety backup before restore: {}",
+            preBackupName
+        ));
 
-        let mut preArgs = Vec::new();
-        for d in ccmFs::CLAUDE_CONFIG_DIRS {
+        let mut relativePreArgs = Vec::new();
+        for d in lomaFs::CLAUDE_CONFIG_DIRS {
             let path = homePath.join(d);
             if path.exists() {
-                preArgs.push(path.to_string_lossy().to_string());
+                relativePreArgs.push(d.to_string());
             }
         }
-        for f in ccmFs::CLAUDE_CONFIG_FILES {
+        for f in lomaFs::CLAUDE_CONFIG_FILES {
             let path = homePath.join(f);
             if path.exists() {
-                preArgs.push(path.to_string_lossy().to_string());
+                relativePreArgs.push(f.to_string());
             }
         }
 
-        if !preArgs.is_empty() {
+        if !relativePreArgs.is_empty() {
             let _ = Command::new("tar")
                 .arg("-czf")
                 .arg(&preBackupName)
-                .args(&preArgs)
+                .arg("-C")
+                .arg(&homePath)
+                .args(&relativePreArgs)
                 .status();
             display::success(&format!("Safety backup created: {}", preBackupName));
         }
     }
 
-    // Extract — detect absolute vs relative paths in the archive
-    let isAbsolute = contentsStr.lines().next().map(|line| line.starts_with('/')).unwrap_or(false);
-    let extractStatus = if isAbsolute {
+    // Determine layout: check if archive contains the configuration folder relative path
+    let has_claude_folder = contentsStr
+        .lines()
+        .any(|line| line.starts_with(".claude") || line.starts_with("./.claude"));
+
+    let extractStatus = if has_claude_folder {
+        // Full backup: extract directly into homePath
         Command::new("tar")
             .arg("-xzf")
             .arg(selectedArchive)
-            .args(["-C", "/"])
+            .args(["-C", &homePath.to_string_lossy()])
             .status()?
     } else {
+        // JSON-only backup: extract into ~/.claude
         let dest = homePath.join(".claude");
         fs::create_dir_all(&dest)?;
         Command::new("tar")
