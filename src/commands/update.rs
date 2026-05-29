@@ -2,14 +2,19 @@ use crate::utils::display;
 use crate::utils::fs as lomaFs;
 use std::process::Command;
 
-pub fn runUpdate() -> crate::Result<()> {
-    display::title("Update Claude Code");
+pub fn runUpdate(assistant: &str) -> crate::Result<()> {
+    display::title(&format!("Update {}", assistant));
+
+    if assistant != "claude" {
+        display::info(&format!("Update logic for '{}' is not implemented yet.", assistant));
+        return Ok(());
+    }
 
     if !lomaFs::claudeIsInstalled() {
         display::warn(
             "Claude Code is not currently installed. Running clean installation instead.",
         );
-        return crate::commands::install::runInstall();
+        return crate::commands::install::runInstall(assistant);
     }
 
     display::step("Checking current installation type...");

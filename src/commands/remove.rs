@@ -4,16 +4,20 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-pub fn runRemove() -> crate::Result<()> {
-    display::title("Complete Removal of Claude Code");
+pub fn runRemove(assistant: &str) -> crate::Result<()> {
+    display::title(&format!("Complete Removal of {}", assistant));
+
+    if assistant != "claude" {
+        display::info(&format!("Removal logic for '{}' is not implemented yet.", assistant));
+        return Ok(());
+    }
 
     let isInstalled = lomaFs::claudeIsInstalled();
-    let hasConfigDir = std::env::var("HOME")
-        .map(|h| PathBuf::from(h).join(".claude").exists())
-        .unwrap_or(false);
-    let hasConfigFile = std::env::var("HOME")
-        .map(|h| PathBuf::from(h).join(".claude.json").exists())
-        .unwrap_or(false);
+    let assistantDir = lomaFs::getAssistantDir(assistant);
+    let assistantConfigFile = lomaFs::getAssistantConfigFile(assistant);
+
+    let hasConfigDir = assistantDir.exists();
+    let hasConfigFile = assistantConfigFile.exists();
 
     if !isInstalled && !hasConfigDir && !hasConfigFile {
         display::warn("Claude Code does not appear to be installed on this system.");
@@ -26,25 +30,17 @@ pub fn runRemove() -> crate::Result<()> {
     println!();
     display::warn("WARNING: The following will be permanently deleted:");
     println!("  • claude binaries");
-    println!("  • Anthropic DNF repository");
-    println!("  • ~/.claude/  (settings, agents, skills, MCP configs)");
-    println!("  • ~/.claude.json  (auth tokens, session history)");
-    println!("  • ~/.local/share/claude/  (application data)");
-    println!("  • ~/.cache/claude/  (caches)");
-    println!("  • Entries in .bashrc / .zshrc");
-    println!("  • Any related systemd services");
+    println!("  • .loma/{}/  (settings, agents, skills, MCP configs)", assistant);
+    println!("  • .loma/{}.json  (auth tokens, session history)", assistant);
     println!();
 
-    if !display::confirm("Confirm complete removal of Claude Code?") {
+    if !display::confirm(&format!("Confirm complete removal of {}?", assistant)) {
         display::info("Removal cancelled by user.");
         return Ok(());
     }
 
     removeBinaries()?;
-    removeDnfRepo()?;
-    removeConfigsAndData()?;
-    lomaFs::cleanShellConfigs()?;
-    removeServices()?;
+    removeConfigsAndData(assistant)?;
 
     display::divider();
     display::step("Post-removal verification");
@@ -60,31 +56,23 @@ pub fn runRemove() -> crate::Result<()> {
         display::success("'claude' binary: not found.");
     }
 
-    if let Some(home) = std::env::var_os("HOME") {
-        let homePath = PathBuf::from(home);
-        for d in lomaFs::CLAUDE_CONFIG_DIRS {
-            if homePath.join(d).exists() {
-                display::warn(&format!("Directory still present: ~/.{}", d));
-                clean = false;
-            }
-        }
-        for d in lomaFs::CLAUDE_DATA_DIRS {
-            if homePath.join(d).exists() {
-                display::warn(&format!("Directory still present: ~/{}", d));
-                clean = false;
-            }
-        }
-        for f in lomaFs::CLAUDE_CONFIG_FILES {
-            if homePath.join(f).exists() {
-                display::warn(&format!("File still present: ~/.{}", f));
-                clean = false;
-            }
-        }
+    if assistantDir.exists() {
+        display::warn(&format!("Directory still present: {}", assistantDir.display()));
+        clean = false;
+    } else {
+        display::success("Assistant configuration directory: removed.");
+    }
+
+    if assistantConfigFile.exists() {
+        display::warn(&format!("File still present: {}", assistantConfigFile.display()));
+        clean = false;
+    } else {
+        display::success("Assistant configuration file: removed.");
     }
 
     println!();
     if clean {
-        display::success("Claude Code completely removed. System is clean.");
+        display::success(&format!("{} completely removed. System is clean.", assistant));
     } else {
         display::warn("Removal mostly successful. Some items remain (see above).");
         display::info("Re-run the remove command or delete them manually.");
@@ -142,169 +130,44 @@ fn removeBinaries() -> crate::Result<()> {
     Ok(())
 }
 
-fn removeDnfRepo() -> crate::Result<()> {
-    if !cfg!(target_os = "linux") {
-        return Ok(());
-    }
-    display::step("Removing Anthropic DNF/YUM repository");
-    for repo in lomaFs::CLAUDE_DNF_REPO_FILES {
-        let p = Path::new(repo);
-        if p.exists() {
-            let euid = Command::new("id")
-                .arg("-u")
-                .output()
-                .map(|o| {
-                    String::from_utf8_lossy(&o.stdout)
-                        .trim()
-                        .parse::<u32>()
-                        .unwrap_or(999)
-                })
-                .unwrap_or(999);
+pub fn removeConfigsAndData(assistant: &str) -> crate::Result<()> {
+    display::step(&format!("Removing {} configuration files and data under .loma", assistant));
 
-            let status = if euid != 0 {
-                Command::new("sudo").args(["rm", "-f", repo]).status()?
-            } else {
-                Command::new("rm").args(["rm", "-f", repo]).status()?
-            };
-
-            if status.success() {
-                display::success(&format!("Repository file removed: {}", repo));
-            } else {
-                display::warn(&format!("Failed to remove: {}", repo));
-            }
-        }
+    let assistantDir = lomaFs::getAssistantDir(assistant);
+    if assistantDir.exists() {
+        let _ = fs::remove_dir_all(&assistantDir);
+        display::success(&format!("Removed: {}", assistantDir.display()));
+    } else {
+        display::info(&format!("Not found: {}", assistantDir.display()));
     }
 
-    if lomaFs::cmdExists("rpm") && lomaFs::cmdExists("dnf") {
-        let checkPkg = Command::new("rpm").args(["-q", "claude-code"]).output();
-        if let Ok(o) = checkPkg {
-            if o.status.success() {
-                display::info("dnf package 'claude-code' detected — removing...");
-                let removePkg = Command::new("sudo")
-                    .args(["dnf", "remove", "-y", "claude-code"])
-                    .status();
-                match removePkg {
-                    Ok(s) if s.success() => display::success("dnf package removed."),
-                    _ => display::warn("dnf removal failed."),
-                }
-            }
-        }
+    let assistantConfigFile = lomaFs::getAssistantConfigFile(assistant);
+    if assistantConfigFile.exists() {
+        let _ = fs::remove_file(&assistantConfigFile);
+        display::success(&format!("Removed: {}", assistantConfigFile.display()));
+    } else {
+        display::info(&format!("Not found: {}", assistantConfigFile.display()));
     }
 
-    Ok(())
-}
+    // Clean npm cache pattern for anthropic/claude-code locally if npm is present
+    if lomaFs::cmdExists("npm") {
+        let npmCacheDir = Command::new("npm")
+            .args(["config", "get", "cache"])
+            .output()
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+            .unwrap_or_else(|_| {
+                std::env::var("HOME")
+                    .map(|h| format!("{}/.npm", h))
+                    .unwrap_or_else(|_| "/tmp/.npm".to_string())
+            });
 
-pub fn removeConfigsAndData() -> crate::Result<()> {
-    display::step("Removing configuration files and data");
-
-    if let Some(home) = std::env::var_os("HOME") {
-        let homePath = PathBuf::from(home);
-
-        for d in lomaFs::CLAUDE_CONFIG_DIRS {
-            let path = homePath.join(d);
-            if path.exists() {
-                let _ = fs::remove_dir_all(&path);
-                display::success(&format!("Removed: ~/{}", d));
-            } else {
-                display::info(&format!("Not found: ~/{}", d));
-            }
-        }
-
-        for f in lomaFs::CLAUDE_CONFIG_FILES {
-            let path = homePath.join(f);
-            if path.exists() {
-                let _ = fs::remove_file(&path);
-                display::success(&format!("Removed: ~/{}", f));
-            } else {
-                display::info(&format!("Not found: ~/{}", f));
-            }
-        }
-
-        for d in lomaFs::CLAUDE_DATA_DIRS {
-            let path = homePath.join(d);
-            if path.exists() {
-                let _ = fs::remove_dir_all(&path);
-                display::success(&format!("Removed: ~/{}", d));
-            } else {
-                display::info(&format!("Not found: ~/{}", d));
-            }
-        }
+        cleanSubdirPattern(&npmCacheDir, "anthropic", 3);
+        cleanSubdirPattern(&npmCacheDir, "claude-code", 3);
+        display::success("Anthropic npm cache entries cleaned.");
     }
-
-    let npmCacheDir = Command::new("npm")
-        .args(["config", "get", "cache"])
-        .output()
-        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
-        .unwrap_or_else(|_| {
-            std::env::var("HOME")
-                .map(|h| format!("{}/.npm", h))
-                .unwrap_or_else(|_| "/tmp/.npm".to_string())
-        });
-
-    cleanSubdirPattern(&npmCacheDir, "anthropic", 3);
-    cleanSubdirPattern(&npmCacheDir, "claude-code", 3);
-    display::success("Anthropic npm cache entries cleaned.");
 
     cleanSubdirPattern("/tmp", "claude", 2);
     display::success("Temporary files in /tmp cleaned.");
-
-    Ok(())
-}
-
-fn removeServices() -> crate::Result<()> {
-    if !cfg!(target_os = "linux") {
-        return Ok(());
-    }
-    display::step("Checking for systemd services");
-    let services = &["claude", "claude-code", "anthropic-claude"];
-
-    if lomaFs::cmdExists("systemctl") {
-        for svc in services {
-            let check = Command::new("systemctl")
-                .args(["list-units", "--all", "--full"])
-                .output();
-            if let Ok(o) = check {
-                let stdout = String::from_utf8_lossy(&o.stdout);
-                if stdout.contains(svc) {
-                    display::warn(&format!("Service found: {}", svc));
-                    let _ = Command::new("sudo")
-                        .args(["systemctl", "stop", svc])
-                        .status();
-                    let _ = Command::new("sudo")
-                        .args(["systemctl", "disable", svc])
-                        .status();
-                    let _ = Command::new("sudo")
-                        .args(["systemctl", "daemon-reload"])
-                        .status();
-                    display::success(&format!("Service {} stopped and disabled.", svc));
-                }
-            }
-        }
-    }
-
-    if let Some(home) = std::env::var_os("HOME") {
-        let homePath = PathBuf::from(home);
-        let unitDirs = &[
-            homePath.join(".config/systemd/user"),
-            PathBuf::from("/etc/systemd/system"),
-            PathBuf::from("/usr/lib/systemd/system"),
-        ];
-
-        for dir in unitDirs {
-            if !dir.exists() {
-                continue;
-            }
-            if let Ok(entries) = fs::read_dir(dir) {
-                for entry in entries.flatten() {
-                    let entryPath = entry.path();
-                    let name = entryPath.file_name().unwrap_or_default().to_string_lossy();
-                    if name.contains("claude") {
-                        let _ = lomaFs::requireRootFor(&entryPath.to_string_lossy());
-                    }
-                }
-            }
-        }
-    }
 
     Ok(())
 }

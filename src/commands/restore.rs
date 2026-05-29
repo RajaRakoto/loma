@@ -2,22 +2,28 @@ use crate::utils::display;
 use crate::utils::fs as lomaFs;
 use chrono::Local;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
-pub fn runRestore() -> crate::Result<()> {
-    display::title("Restore Claude Code Backup");
+pub fn runRestore(assistant: &str) -> crate::Result<()> {
+    display::title(&format!("Restore {} Backup", assistant));
 
-    display::step("Searching for backup archives");
+    let archivesDir = lomaFs::getArchivesDir();
+    display::step(&format!("Searching for backup archives in {}...", archivesDir.display()));
 
-    let currentDir = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+    if !archivesDir.exists() {
+        display::error("No archives directory found. Please create a backup first.");
+        return Err(crate::Error::other("Archives directory does not exist"));
+    }
+
     let mut archives = Vec::new();
-    if let Ok(entries) = fs::read_dir(&currentDir) {
+    if let Ok(entries) = fs::read_dir(&archivesDir) {
         for entry in entries.flatten() {
             let entryPath = entry.path();
             if entryPath.is_file() {
                 let name = entryPath.file_name().unwrap_or_default().to_string_lossy();
-                if name.starts_with("claude-backup-") && name.ends_with(".tar.gz") {
+                let prefix = format!("{}-backup-", assistant);
+                if name.starts_with(&prefix) && name.ends_with(".tar.gz") {
                     archives.push(entryPath);
                 }
             }
@@ -29,9 +35,9 @@ pub fn runRestore() -> crate::Result<()> {
     if archives.is_empty() {
         display::error(&format!(
             "No backup archives found in: {}",
-            currentDir.to_string_lossy()
+            archivesDir.to_string_lossy()
         ));
-        display::info("Create a backup first with: loma backup");
+        display::info(&format!("Create a backup first with: loma backup {}", assistant));
         return Err(crate::Error::other("No backup archives found"));
     }
 
@@ -101,7 +107,7 @@ pub fn runRestore() -> crate::Result<()> {
     }
     println!();
 
-    display::warn("Restore will overwrite existing Claude Code files.");
+    display::warn(&format!("Restore will overwrite existing {} files.", assistant));
     if !display::confirm(&format!("Confirm restore from {}?", archiveName)) {
         display::info("Restore cancelled.");
         return Ok(());
@@ -109,71 +115,65 @@ pub fn runRestore() -> crate::Result<()> {
 
     display::step("Restoring files");
 
-    let homePath = lomaFs::get_home_dir()
-        .ok_or_else(|| crate::Error::other("HOME environment variable not set"))?;
-    let configDir = homePath.join(".claude");
-    let configFile = homePath.join(".claude.json");
+    let lomaDir = lomaFs::getLomaDir();
+    let assistantDir = lomaFs::getAssistantDir(assistant);
+    let assistantConfigFile = lomaFs::getAssistantConfigFile(assistant);
 
-    if configDir.exists() || configFile.exists() {
+    if assistantDir.exists() || assistantConfigFile.exists() {
         let safetyTimestamp = Local::now().format("%Y%m%d-%H%M%S").to_string();
-        let preBackupName = format!("claude-pre-restore-{}.tar.gz", safetyTimestamp);
+        let preBackupName = format!("{}-pre-restore-{}.tar.gz", assistant, safetyTimestamp);
+        let preBackupPath = archivesDir.join(&preBackupName);
         display::info(&format!(
             "Creating safety backup before restore: {}",
-            preBackupName
+            preBackupPath.display()
         ));
 
         let mut relativePreArgs = Vec::new();
-        for d in lomaFs::CLAUDE_CONFIG_DIRS {
-            let path = homePath.join(d);
-            if path.exists() {
-                relativePreArgs.push(d.to_string());
-            }
+        if assistantDir.exists() {
+            relativePreArgs.push(assistant.to_string());
         }
-        for f in lomaFs::CLAUDE_CONFIG_FILES {
-            let path = homePath.join(f);
-            if path.exists() {
-                relativePreArgs.push(f.to_string());
-            }
+        let configFilename = format!("{}.json", assistant);
+        if assistantConfigFile.exists() {
+            relativePreArgs.push(configFilename);
         }
 
         if !relativePreArgs.is_empty() {
             let _ = Command::new("tar")
                 .arg("-czf")
-                .arg(&preBackupName)
+                .arg(&preBackupPath)
                 .arg("-C")
-                .arg(&homePath)
+                .arg(&lomaDir)
                 .args(&relativePreArgs)
                 .status();
-            display::success(&format!("Safety backup created: {}", preBackupName));
+            display::success(&format!("Safety backup created: {}", preBackupPath.display()));
         }
     }
 
     // Determine layout: check if archive contains the configuration folder relative path
-    let has_claude_folder = contentsStr
+    let has_folder_prefix = contentsStr
         .lines()
-        .any(|line| line.starts_with(".claude") || line.starts_with("./.claude"));
+        .any(|line| line.starts_with(assistant) || line.starts_with(&format!("./{}", assistant)));
 
-    let extractStatus = if has_claude_folder {
-        // Full backup: extract directly into homePath
+    let extractStatus = if has_folder_prefix {
+        // Full backup: extract directly into lomaDir
         Command::new("tar")
             .arg("-xzf")
             .arg(selectedArchive)
-            .args(["-C", &homePath.to_string_lossy()])
+            .args(["-C", &lomaDir.to_string_lossy()])
             .status()?
     } else {
-        // JSON-only backup: extract into ~/.claude
-        let dest = homePath.join(".claude");
-        fs::create_dir_all(&dest)?;
+        // JSON-only backup: extract into .loma/<assistant>
+        fs::create_dir_all(&assistantDir)?;
         Command::new("tar")
             .arg("-xzf")
             .arg(selectedArchive)
-            .args(["-C", &dest.to_string_lossy()])
+            .args(["-C", &assistantDir.to_string_lossy()])
             .status()?
     };
 
     if extractStatus.success() {
         display::success("Restore completed successfully.");
-        display::info("Restart Claude Code to apply the restored settings.");
+        display::info(&format!("Restart {} to apply the restored settings.", assistant));
     } else {
         display::error("Restore failed.");
         return Err(crate::Error::other("tar extraction failed"));

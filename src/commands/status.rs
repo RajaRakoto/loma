@@ -1,11 +1,16 @@
 use crate::utils::display;
 use crate::utils::fs as lomaFs;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 
-pub fn runStatus() -> crate::Result<()> {
-    display::title("Claude Code Status");
+pub fn runStatus(assistant: &str) -> crate::Result<()> {
+    display::title(&format!("{} Status", assistant));
+
+    if assistant != "claude" {
+        display::info(&format!("Status logic for '{}' is not implemented yet.", assistant));
+        return Ok(());
+    }
 
     // 1. Binary check
     let binaryPath = lomaFs::getClaudeBinary();
@@ -30,110 +35,28 @@ pub fn runStatus() -> crate::Result<()> {
 
     display::divider();
 
-    // 2. Directories & configurations check
+    // 2. Directories & configurations check inside .loma
     display::step("Configuration & Data Directories");
-    if let Some(home) = std::env::var_os("HOME") {
-        let homePath = PathBuf::from(home);
+    let assistantDir = lomaFs::getAssistantDir(assistant);
+    let assistantConfigFile = lomaFs::getAssistantConfigFile(assistant);
 
-        // check ~/.claude
-        let claudeDir = homePath.join(".claude");
-        if claudeDir.exists() {
-            let size = getDirSize(&claudeDir).unwrap_or(0);
-            display::success(&format!("~/.claude/ found (Size: {} bytes)", size));
-        } else {
-            display::info("~/.claude/ not found");
-        }
-
-        // check ~/.claude.json
-        let claudeJson = homePath.join(".claude.json");
-        if claudeJson.exists() {
-            if let Ok(meta) = fs::metadata(&claudeJson) {
-                display::success(&format!(
-                    "~/.claude.json found (Size: {} bytes)",
-                    meta.len()
-                ));
-            }
-        } else {
-            display::info("~/.claude.json not found (no active auth session)");
-        }
-
-        // check data/cache dirs
-        for d in lomaFs::CLAUDE_DATA_DIRS {
-            let path = homePath.join(d);
-            if path.exists() {
-                let size = getDirSize(&path).unwrap_or(0);
-                display::success(&format!("~/{} found (Size: {} bytes)", d, size));
-            } else {
-                display::info(&format!("~/{} not found", d));
-            }
-        }
+    if assistantDir.exists() {
+        let size = getDirSize(&assistantDir).unwrap_or(0);
+        display::success(&format!("{}/ found (Size: {} bytes)", assistantDir.display(), size));
+    } else {
+        display::info(&format!("{}/ not found", assistantDir.display()));
     }
 
-    if cfg!(target_os = "linux") {
-        display::divider();
-
-        // 3. DNF Repos
-        display::step("DNF Repositories");
-        let mut repoFound = false;
-        for repo in lomaFs::CLAUDE_DNF_REPO_FILES {
-            let p = Path::new(repo);
-            if p.exists() {
-                display::success(&format!("Repo file exists: {}", repo));
-                repoFound = true;
-            }
+    if assistantConfigFile.exists() {
+        if let Ok(meta) = fs::metadata(&assistantConfigFile) {
+            display::success(&format!(
+                "{} found (Size: {} bytes)",
+                assistantConfigFile.display(),
+                meta.len()
+            ));
         }
-        if !repoFound {
-            display::info("No Claude DNF repository configuration files found.");
-        }
-
-        // Check DNF rpm package
-        if lomaFs::cmdExists("rpm") {
-            let rpmCheck = Command::new("rpm").args(["-q", "claude-code"]).output();
-            if let Ok(o) = rpmCheck {
-                if o.status.success() {
-                    display::success(&format!(
-                        "dnf package 'claude-code' is installed: {}",
-                        String::from_utf8_lossy(&o.stdout).trim()
-                    ));
-                } else {
-                    display::info("dnf package 'claude-code' is not installed.");
-                }
-            }
-        }
-
-        display::divider();
-
-        // 4. Systemd services
-        display::step("Systemd Services");
-        if lomaFs::cmdExists("systemctl") {
-            let services = &["claude", "claude-code", "anthropic-claude"];
-            let mut serviceFound = false;
-            for svc in services {
-                let check = Command::new("systemctl").args(["is-active", svc]).output();
-                if let Ok(o) = check {
-                    let status = String::from_utf8_lossy(&o.stdout).trim().to_string();
-                    let unitExists = Command::new("systemctl")
-                        .args(["list-units", "--all", "--full"])
-                        .arg(svc)
-                        .output();
-                    if let Ok(uo) = unitExists {
-                        let uStr = String::from_utf8_lossy(&uo.stdout);
-                        if uStr.contains(svc) {
-                            display::success(&format!(
-                                "Service '{}' exists. Active status: {}",
-                                svc, status
-                            ));
-                            serviceFound = true;
-                        }
-                    }
-                }
-            }
-            if !serviceFound {
-                display::info("No Claude-related systemd services are registered.");
-            }
-        } else {
-            display::info("systemctl not available.");
-        }
+    } else {
+        display::info(&format!("{} not found", assistantConfigFile.display()));
     }
 
     Ok(())

@@ -1,39 +1,26 @@
 use crate::utils::display;
 use crate::utils::fs as lomaFs;
 use chrono::Local;
-use std::path::Path;
+use std::fs;
 use std::process::Command;
 
-pub fn runBackup() -> crate::Result<()> {
-    display::title("Claude Code Backup");
+pub fn runBackup(assistant: &str) -> crate::Result<()> {
+    display::title(&format!("{} Configuration Backup", assistant));
 
-    let homePath = lomaFs::get_home_dir()
-        .ok_or_else(|| crate::Error::other("HOME environment variable not set"))?;
-
-    let settingsFile = homePath.join(".claude/settings.json");
-    let settingsLocalFile = homePath.join(".claude/settings.local.json");
+    let assistantDir = lomaFs::getAssistantDir(assistant);
+    let assistantConfigFile = lomaFs::getAssistantConfigFile(assistant);
 
     // Check if there is something to back up
-    let mut hasData = false;
-    for d in lomaFs::CLAUDE_CONFIG_DIRS {
-        if homePath.join(d).exists() {
-            hasData = true;
-        }
-    }
-    for f in lomaFs::CLAUDE_CONFIG_FILES {
-        if homePath.join(f).exists() {
-            hasData = true;
-        }
-    }
+    let hasData = assistantDir.exists() || assistantConfigFile.exists();
 
     if !hasData {
-        display::error("No Claude Code configuration found to back up.");
+        display::error(&format!("No {} configuration found to back up in .loma.", assistant));
         return Err(crate::Error::other("No configuration found to back up"));
     }
 
     display::step("Select backup type");
     println!("  1) JSON config only — settings.json & settings.local.json (no auth tokens)");
-    println!("  2) Full backup      — all Claude Code files, data, and auth tokens");
+    println!("  2) Full backup      — all configuration files, data, and auth tokens");
     println!();
 
     let mut choice = String::new();
@@ -53,15 +40,23 @@ pub fn runBackup() -> crate::Result<()> {
         display::warn("Invalid choice. Enter 1 or 2.");
     }
 
+    // Ensure archives directory exists
+    let archivesDir = lomaFs::getArchivesDir();
+    fs::create_dir_all(&archivesDir)?;
+
     let timestamp = Local::now().format("%Y%m%d-%H%M%S").to_string();
     let archiveName = if choice == "1" {
-        format!("claude-backup-json-only-{}.tar.gz", timestamp)
+        format!("{}-backup-json-only-{}.tar.gz", assistant, timestamp)
     } else {
-        format!("claude-backup-full-{}.tar.gz", timestamp)
+        format!("{}-backup-full-{}.tar.gz", assistant, timestamp)
     };
+    let archivePath = archivesDir.join(&archiveName);
 
     if choice == "1" {
-        display::step("Backing up JSON config files (settings.json only)");
+        display::step(&format!("Backing up JSON config files (settings.json only) from .loma/{}", assistant));
+        
+        let settingsFile = assistantDir.join("settings.json");
+        let settingsLocalFile = assistantDir.join("settings.local.json");
         let mut relativeFiles = Vec::new();
         if settingsFile.exists() {
             relativeFiles.push("settings.json".to_string());
@@ -71,20 +66,20 @@ pub fn runBackup() -> crate::Result<()> {
         }
 
         if relativeFiles.is_empty() {
-            display::error("No settings.json found in ~/.claude");
+            display::error(&format!("No settings.json found in .loma/{}", assistant));
             return Err(crate::Error::other("No settings.json found"));
         }
 
         let status = Command::new("tar")
             .arg("-czf")
-            .arg(&archiveName)
+            .arg(&archivePath)
             .arg("-C")
-            .arg(homePath.join(".claude"))
+            .arg(&assistantDir)
             .args(&relativeFiles)
             .status()?;
 
         if status.success() {
-            display::success(&format!("JSON config backup created: {}", archiveName));
+            display::success(&format!("JSON config backup created: {}", archivePath.display()));
         } else {
             display::error("Failed to create JSON config backup.");
             return Err(crate::Error::other("tar command failed"));
@@ -92,31 +87,20 @@ pub fn runBackup() -> crate::Result<()> {
     } else {
         display::step("Full backup");
         let mut relativeTarArgs = Vec::new();
-        for d in lomaFs::CLAUDE_CONFIG_DIRS {
-            let path = homePath.join(d);
-            if path.exists() {
-                relativeTarArgs.push(d.to_string());
-            }
+        if assistantDir.exists() {
+            relativeTarArgs.push(assistant.to_string());
         }
-        for f in lomaFs::CLAUDE_CONFIG_FILES {
-            let path = homePath.join(f);
-            if path.exists() {
-                relativeTarArgs.push(f.to_string());
-            }
-        }
-        for d in lomaFs::CLAUDE_DATA_DIRS {
-            let path = homePath.join(d);
-            if path.exists() {
-                relativeTarArgs.push(d.to_string());
-            }
+        let configFilename = format!("{}.json", assistant);
+        if assistantConfigFile.exists() {
+            relativeTarArgs.push(configFilename);
         }
 
         if relativeTarArgs.is_empty() {
-            display::error("No Claude Code files found to back up.");
+            display::error(&format!("No {} files found to back up.", assistant));
             return Err(crate::Error::other("No files found to back up"));
         }
 
-        display::info("Items included in backup (relative to HOME):");
+        display::info("Items included in backup (relative to .loma):");
         for item in &relativeTarArgs {
             println!("    {}", item);
         }
@@ -124,27 +108,26 @@ pub fn runBackup() -> crate::Result<()> {
 
         let status = Command::new("tar")
             .arg("-czf")
-            .arg(&archiveName)
+            .arg(&archivePath)
             .arg("-C")
-            .arg(&homePath)
+            .arg(".loma")
             .args(&relativeTarArgs)
             .status()?;
 
         if status.success() {
-            display::success(&format!("Full backup created: {}", archiveName));
+            display::success(&format!("Full backup created: {}", archivePath.display()));
         } else {
             display::error("Failed to create full backup.");
             return Err(crate::Error::other("tar command failed"));
         }
     }
 
-    let archivePath = Path::new(&archiveName);
     if let Ok(meta) = archivePath.metadata() {
         let sizeKb = meta.len() as f64 / 1024.0;
         display::info(&format!("Archive size:     {:.2} KB", sizeKb));
     }
 
-    if let Ok(absPath) = std::fs::canonicalize(archivePath) {
+    if let Ok(absPath) = std::fs::canonicalize(&archivePath) {
         display::info(&format!("Archive location: {}", absPath.to_string_lossy()));
     }
 

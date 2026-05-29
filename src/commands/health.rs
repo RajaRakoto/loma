@@ -1,11 +1,15 @@
 use crate::utils::display;
 use crate::utils::fs as lomaFs;
 use std::fs;
-use std::path::PathBuf;
 use std::process::Command;
 
-pub fn runHealth() -> crate::Result<()> {
-    display::title("Claude Code Environment Health Check");
+pub fn runHealth(assistant: &str) -> crate::Result<()> {
+    display::title(&format!("{} Environment Health Check", assistant));
+
+    if assistant != "claude" {
+        display::info(&format!("Health check for '{}' is not implemented yet.", assistant));
+        return Ok(());
+    }
 
     let mut healthy = true;
 
@@ -38,24 +42,23 @@ pub fn runHealth() -> crate::Result<()> {
         );
     }
 
-    // 4. Check write permissions to HOME
-    display::step("Checking write permissions...");
-    if let Some(home) = std::env::var_os("HOME") {
-        let homePath = PathBuf::from(home);
-        let testFile = homePath.join(".claude_health_test");
-        match fs::write(&testFile, "test") {
-            Ok(_) => {
-                let _ = fs::remove_file(&testFile);
-                display::success("Home directory is writable.");
-            }
-            Err(e) => {
-                display::error(&format!("Home directory is not writable: {}", e));
-                healthy = false;
-            }
+    // 4. Check write permissions to local .loma directory
+    display::step("Checking .loma directory write permissions...");
+    let lomaDir = lomaFs::getLomaDir();
+    let testFile = lomaDir.join(format!(".{}_health_test", assistant));
+    
+    // Ensure the parent exists
+    let _ = fs::create_dir_all(&lomaDir);
+
+    match fs::write(&testFile, "test") {
+        Ok(_) => {
+            let _ = fs::remove_file(&testFile);
+            display::success(".loma directory is writable.");
         }
-    } else {
-        display::error("HOME environment variable not set.");
-        healthy = false;
+        Err(e) => {
+            display::error(&format!(".loma directory is not writable: {}", e));
+            healthy = false;
+        }
     }
 
     // 5. Check internet connectivity to registry.npmjs.org
@@ -78,7 +81,7 @@ pub fn runHealth() -> crate::Result<()> {
 
     display::divider();
     if healthy {
-        display::success("Environment is healthy for running and managing Claude Code!");
+        display::success(&format!("Environment is healthy for running and managing {}!", assistant));
     } else {
         display::error("Some issues were detected. Check output details above.");
     }

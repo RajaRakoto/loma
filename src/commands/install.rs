@@ -1,10 +1,14 @@
 use crate::utils::display;
 use crate::utils::fs as lomaFs;
-use std::path::PathBuf;
 use std::process::Command;
 
-pub fn runInstall() -> crate::Result<()> {
-    display::title("Installing Claude Code");
+pub fn runInstall(assistant: &str) -> crate::Result<()> {
+    display::title(&format!("Installing {}", assistant));
+
+    if assistant != "claude" {
+        display::info(&format!("Installation logic for '{}' is not implemented yet.", assistant));
+        return Ok(());
+    }
 
     display::step("Checking environment");
 
@@ -31,37 +35,27 @@ pub fn runInstall() -> crate::Result<()> {
         }
 
         // Remove existing installation
-        crate::commands::remove::runRemove()?;
+        crate::commands::remove::runRemove(assistant)?;
     }
 
-    // Check for leftover files
+    // Check for leftover files in local .loma
+    let assistantDir = lomaFs::getAssistantDir(assistant);
+    let assistantConfigFile = lomaFs::getAssistantConfigFile(assistant);
     let mut staleFound = false;
-    if let Some(home) = std::env::var_os("HOME") {
-        let homePath = PathBuf::from(home);
-        for d in lomaFs::CLAUDE_CONFIG_DIRS {
-            if homePath.join(d).exists() {
-                display::warn(&format!("Leftover directory found: ~/.{}", d));
-                staleFound = true;
-            }
-        }
-        for d in lomaFs::CLAUDE_DATA_DIRS {
-            if homePath.join(d).exists() {
-                display::warn(&format!("Leftover directory found: ~/{}", d));
-                staleFound = true;
-            }
-        }
-        for f in lomaFs::CLAUDE_CONFIG_FILES {
-            if homePath.join(f).exists() {
-                display::warn(&format!("Leftover file found: ~/.{}", f));
-                staleFound = true;
-            }
-        }
+
+    if assistantDir.exists() {
+        display::warn(&format!("Leftover configuration directory found: {}", assistantDir.display()));
+        staleFound = true;
+    }
+    if assistantConfigFile.exists() {
+        display::warn(&format!("Leftover configuration file found: {}", assistantConfigFile.display()));
+        staleFound = true;
     }
 
     if staleFound {
         display::warn("Leftover files were detected.");
         if display::confirm("Remove these leftover files before installing?") {
-            crate::commands::remove::removeConfigsAndData()?;
+            crate::commands::remove::removeConfigsAndData(assistant)?;
         }
     } else {
         display::success("No leftover files detected. Environment is clean.");
