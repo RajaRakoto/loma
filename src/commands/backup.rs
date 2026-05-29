@@ -2,7 +2,6 @@ use crate::utils::display;
 use crate::utils::fs as lomaFs;
 use chrono::Local;
 use std::fs;
-use std::process::Command;
 
 pub fn runBackup(assistant: &str) -> crate::Result<()> {
     display::title(&format!("{} Configuration Backup", assistant));
@@ -46,23 +45,25 @@ pub fn runBackup(assistant: &str) -> crate::Result<()> {
 
     let timestamp = Local::now().format("%Y%m%d-%H%M%S").to_string();
     let archiveName = if choice == "1" {
-        format!("{}-backup-json-only-{}.tar.gz", assistant, timestamp)
+        format!("{}-backup-json-only-{}.zip", assistant, timestamp)
     } else {
-        format!("{}-backup-full-{}.tar.gz", assistant, timestamp)
+        format!("{}-backup-full-{}.zip", assistant, timestamp)
     };
     let archivePath = archivesDir.join(&archiveName);
 
+    let lomaDir = lomaFs::getLomaDir();
+
     if choice == "1" {
-        display::step(&format!("Backing up JSON config files (settings.json only) from .loma/{}", assistant));
+        display::step(&format!("Backing up JSON config files from .loma/{}", assistant));
         
         let settingsFile = assistantDir.join("settings.json");
         let settingsLocalFile = assistantDir.join("settings.local.json");
         let mut relativeFiles = Vec::new();
         if settingsFile.exists() {
-            relativeFiles.push("settings.json".to_string());
+            relativeFiles.push(format!("{}/settings.json", assistant));
         }
         if settingsLocalFile.exists() {
-            relativeFiles.push("settings.local.json".to_string());
+            relativeFiles.push(format!("{}/settings.local.json", assistant));
         }
 
         if relativeFiles.is_empty() {
@@ -70,56 +71,32 @@ pub fn runBackup(assistant: &str) -> crate::Result<()> {
             return Err(crate::Error::other("No settings.json found"));
         }
 
-        let status = Command::new("tar")
-            .arg("-czf")
-            .arg(&archivePath)
-            .arg("-C")
-            .arg(&assistantDir)
-            .args(&relativeFiles)
-            .status()?;
-
-        if status.success() {
-            display::success(&format!("JSON config backup created: {}", archivePath.display()));
-        } else {
-            display::error("Failed to create JSON config backup.");
-            return Err(crate::Error::other("tar command failed"));
-        }
+        lomaFs::createZip(&lomaDir, &relativeFiles, &archivePath)?;
+        display::success(&format!("JSON config backup created: {}", archivePath.display()));
     } else {
         display::step("Full backup");
-        let mut relativeTarArgs = Vec::new();
+        let mut relativeArgs = Vec::new();
         if assistantDir.exists() {
-            relativeTarArgs.push(assistant.to_string());
+            relativeArgs.push(assistant.to_string());
         }
         let configFilename = format!("{}.json", assistant);
         if assistantConfigFile.exists() {
-            relativeTarArgs.push(configFilename);
+            relativeArgs.push(configFilename);
         }
 
-        if relativeTarArgs.is_empty() {
+        if relativeArgs.is_empty() {
             display::error(&format!("No {} files found to back up.", assistant));
             return Err(crate::Error::other("No files found to back up"));
         }
 
         display::info("Items included in backup (relative to .loma):");
-        for item in &relativeTarArgs {
+        for item in &relativeArgs {
             println!("    {}", item);
         }
         println!();
 
-        let status = Command::new("tar")
-            .arg("-czf")
-            .arg(&archivePath)
-            .arg("-C")
-            .arg(".loma")
-            .args(&relativeTarArgs)
-            .status()?;
-
-        if status.success() {
-            display::success(&format!("Full backup created: {}", archivePath.display()));
-        } else {
-            display::error("Failed to create full backup.");
-            return Err(crate::Error::other("tar command failed"));
-        }
+        lomaFs::createZip(&lomaDir, &relativeArgs, &archivePath)?;
+        display::success(&format!("Full backup created: {}", archivePath.display()));
     }
 
     if let Ok(meta) = archivePath.metadata() {

@@ -329,3 +329,77 @@ pub fn cleanShellConfigs() -> crate::Result<()> {
 
     Ok(())
 }
+
+pub fn createZip(baseDir: &std::path::Path, relativePaths: &[String], dstZip: &std::path::Path) -> crate::Result<()> {
+    let file = std::fs::File::create(dstZip)?;
+    let mut zip = zip::ZipWriter::new(file);
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Stored);
+
+    for relPathStr in relativePaths {
+        let fullPath = baseDir.join(relPathStr);
+        if !fullPath.exists() {
+            continue;
+        }
+        if fullPath.is_dir() {
+            addDirToZip(&mut zip, baseDir, &fullPath, options)?;
+        } else if fullPath.is_file() {
+            addFileToZip(&mut zip, baseDir, &fullPath, options)?;
+        }
+    }
+
+    zip.finish()?;
+    Ok(())
+}
+
+fn addFileToZip<W: std::io::Write + std::io::Seek>(
+    zip: &mut zip::ZipWriter<W>,
+    baseDir: &std::path::Path,
+    filePath: &std::path::Path,
+    options: zip::write::SimpleFileOptions,
+) -> crate::Result<()> {
+    use std::io::{Read, Write};
+    let relPath = filePath.strip_prefix(baseDir)
+        .map_err(|e| crate::Error::other(e.to_string()))?;
+    let pathStr = relPath.to_string_lossy().replace('\\', "/");
+    
+    zip.start_file(pathStr, options)?;
+    let mut f = std::fs::File::open(filePath)?;
+    let mut buffer = Vec::new();
+    f.read_to_end(&mut buffer)?;
+    zip.write_all(&buffer)?;
+    Ok(())
+}
+
+fn addDirToZip<W: std::io::Write + std::io::Seek>(
+    zip: &mut zip::ZipWriter<W>,
+    baseDir: &std::path::Path,
+    dirPath: &std::path::Path,
+    options: zip::write::SimpleFileOptions,
+) -> crate::Result<()> {
+    let relPath = dirPath.strip_prefix(baseDir)
+        .map_err(|e| crate::Error::other(e.to_string()))?;
+    let mut pathStr = relPath.to_string_lossy().replace('\\', "/");
+    if !pathStr.ends_with('/') {
+        pathStr.push('/');
+    }
+    zip.add_directory(pathStr, options)?;
+
+    for entry in std::fs::read_dir(dirPath)? {
+        let entry = entry?;
+        let entryPath = entry.path();
+        if entryPath.is_dir() {
+            addDirToZip(zip, baseDir, &entryPath, options)?;
+        } else if entryPath.is_file() {
+            addFileToZip(zip, baseDir, &entryPath, options)?;
+        }
+    }
+    Ok(())
+}
+
+pub fn extractZip(zipPath: &std::path::Path, destDir: &std::path::Path) -> crate::Result<()> {
+    let file = std::fs::File::open(zipPath)?;
+    let mut archive = zip::ZipArchive::new(file)?;
+    archive.extract(destDir)?;
+    Ok(())
+}

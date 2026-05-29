@@ -38,6 +38,7 @@ dotenvy = "0.15"
 # Utilities
 uuid = { version = "1.7", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
+zip = { version = "2.1.3", default-features = false }
 
 [dev-dependencies]
 tokio-test = "0.4"

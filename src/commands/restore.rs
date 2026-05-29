@@ -3,7 +3,6 @@ use crate::utils::fs as lomaFs;
 use chrono::Local;
 use std::fs;
 use std::path::Path;
-use std::process::Command;
 
 pub fn runRestore(assistant: &str) -> crate::Result<()> {
     display::title(&format!("Restore {} Backup", assistant));
@@ -23,7 +22,7 @@ pub fn runRestore(assistant: &str) -> crate::Result<()> {
             if entryPath.is_file() {
                 let name = entryPath.file_name().unwrap_or_default().to_string_lossy();
                 let prefix = format!("{}-backup-", assistant);
-                if name.starts_with(&prefix) && name.ends_with(".tar.gz") {
+                if name.starts_with(&prefix) && name.ends_with(".zip") {
                     archives.push(entryPath);
                 }
             }
@@ -94,16 +93,21 @@ pub fn runRestore(assistant: &str) -> crate::Result<()> {
     display::info(&format!("Selected archive: {}", archiveName));
     println!();
 
-    // Show archive contents
+    // Show archive contents using Rust-native ZipArchive
     display::step("Archive contents");
-    let tarContents = Command::new("tar")
-        .arg("-tzf")
-        .arg(selectedArchive)
-        .output()?;
-    let contentsStr = String::from_utf8_lossy(&tarContents.stdout);
-    let lines = contentsStr.lines().take(30);
-    for line in lines {
-        println!("  {}", line);
+    let file = fs::File::open(selectedArchive)?;
+    let mut archive = zip::ZipArchive::new(file)?;
+    
+    let mut count = 0;
+    for i in 0..archive.len() {
+        if count >= 30 {
+            println!("  ... and more");
+            break;
+        }
+        if let Ok(f) = archive.by_index(i) {
+            println!("  {}", f.name());
+            count += 1;
+        }
     }
     println!();
 
@@ -119,9 +123,10 @@ pub fn runRestore(assistant: &str) -> crate::Result<()> {
     let assistantDir = lomaFs::getAssistantDir(assistant);
     let assistantConfigFile = lomaFs::getAssistantConfigFile(assistant);
 
+    // Safety backup before restore
     if assistantDir.exists() || assistantConfigFile.exists() {
         let safetyTimestamp = Local::now().format("%Y%m%d-%H%M%S").to_string();
-        let preBackupName = format!("{}-pre-restore-{}.tar.gz", assistant, safetyTimestamp);
+        let preBackupName = format!("{}-pre-restore-{}.zip", assistant, safetyTimestamp);
         let preBackupPath = archivesDir.join(&preBackupName);
         display::info(&format!(
             "Creating safety backup before restore: {}",
@@ -138,46 +143,16 @@ pub fn runRestore(assistant: &str) -> crate::Result<()> {
         }
 
         if !relativePreArgs.is_empty() {
-            let _ = Command::new("tar")
-                .arg("-czf")
-                .arg(&preBackupPath)
-                .arg("-C")
-                .arg(&lomaDir)
-                .args(&relativePreArgs)
-                .status();
+            lomaFs::createZip(&lomaDir, &relativePreArgs, &preBackupPath)?;
             display::success(&format!("Safety backup created: {}", preBackupPath.display()));
         }
     }
 
-    // Determine layout: check if archive contains the configuration folder relative path
-    let has_folder_prefix = contentsStr
-        .lines()
-        .any(|line| line.starts_with(assistant) || line.starts_with(&format!("./{}", assistant)));
+    // Extract zip directly into lomaDir
+    lomaFs::extractZip(selectedArchive, &lomaDir)?;
 
-    let extractStatus = if has_folder_prefix {
-        // Full backup: extract directly into lomaDir
-        Command::new("tar")
-            .arg("-xzf")
-            .arg(selectedArchive)
-            .args(["-C", &lomaDir.to_string_lossy()])
-            .status()?
-    } else {
-        // JSON-only backup: extract into .loma/<assistant>
-        fs::create_dir_all(&assistantDir)?;
-        Command::new("tar")
-            .arg("-xzf")
-            .arg(selectedArchive)
-            .args(["-C", &assistantDir.to_string_lossy()])
-            .status()?
-    };
-
-    if extractStatus.success() {
-        display::success("Restore completed successfully.");
-        display::info(&format!("Restart {} to apply the restored settings.", assistant));
-    } else {
-        display::error("Restore failed.");
-        return Err(crate::Error::other("tar extraction failed"));
-    }
+    display::success("Restore completed successfully.");
+    display::info(&format!("Restart {} to apply the restored settings.", assistant));
 
     Ok(())
 }
