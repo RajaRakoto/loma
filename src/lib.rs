@@ -1,4 +1,4 @@
-//! claude-code-manager — Native Rust manager for Claude Code on Fedora Linux.
+//! loma — Local LLM Optimizer & Manager Assistant.
 //!
 //! # Modules
 //! - [`api`]    — Axum HTTP server (routes, handlers, types)
