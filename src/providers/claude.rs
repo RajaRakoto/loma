@@ -5,6 +5,7 @@ use crate::utils::fs as lomaFs;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use inquire::MultiSelect;
 
 pub struct ClaudeProvider;
 
@@ -337,7 +338,7 @@ impl super::AssistantProvider for ClaudeProvider {
     }
 
     fn remove(&self) -> crate::Result<()> {
-        display::title("Complete Removal of Claude");
+        display::title("Interactive Removal of Claude");
 
         let isInstalled = lomaFs::claudeIsInstalled();
         let assistantDir = lomaFs::getAssistantDir("claude");
@@ -355,53 +356,137 @@ impl super::AssistantProvider for ClaudeProvider {
         }
 
         println!();
-        display::warn("WARNING: The following will be permanently deleted:");
-        println!("  • claude binaries");
-        println!("  • .claude/  (settings, agents, skills, MCP configs)");
-        println!("  • .claude.json  (auth tokens, session history)");
-        println!();
+        display::info("Select which subjects/files you want to permanently delete:");
+        let options = vec![
+            "Binaries (global npm package & PATH binaries)",
+            "Configurations (native .claude/ directory and settings)",
+            "Credentials & History (local .claude.json auth tokens)",
+            "Cache & Temp Files (npm cache & temporary directories)",
+        ];
 
-        if !display::confirm("Confirm complete removal of Claude?") {
+        let selected = MultiSelect::new("Select subjects to remove:", options)
+            .with_help_message("Space to select, Enter to confirm, Arrow keys to navigate")
+            .prompt()
+            .map_err(|e| crate::Error::other(e.to_string()))?;
+
+        if selected.is_empty() {
+            display::info("No items selected. Removal aborted.");
+            return Ok(());
+        }
+
+        let mut removeBinaries = false;
+        let mut removeConfigs = false;
+        let mut removeCredentials = false;
+        let mut removeCache = false;
+
+        for item in &selected {
+            if item.starts_with("Binaries") {
+                removeBinaries = true;
+            } else if item.starts_with("Configurations") {
+                removeConfigs = true;
+            } else if item.starts_with("Credentials") {
+                removeCredentials = true;
+            } else if item.starts_with("Cache") {
+                removeCache = true;
+            }
+        }
+
+        println!();
+        display::warn("WARNING: The selected components will be permanently deleted.");
+        if !display::confirm("Confirm removal of the selected components?") {
             display::info("Removal cancelled by user.");
             return Ok(());
         }
 
-        self.removeBinaries()?;
-        self.removeConfigsAndData()?;
+        if removeBinaries {
+            self.removeBinaries()?;
+        }
+
+        if removeConfigs {
+            display::step("Removing configuration directory");
+            if assistantDir.exists() {
+                let _ = fs::remove_dir_all(&assistantDir);
+                display::success(&format!("Removed: {}", assistantDir.display()));
+            } else {
+                display::info(&format!("Not found: {}", assistantDir.display()));
+            }
+        }
+
+        if removeCredentials {
+            display::step("Removing credentials and history");
+            if assistantConfigFile.exists() {
+                let _ = fs::remove_file(&assistantConfigFile);
+                display::success(&format!("Removed: {}", assistantConfigFile.display()));
+            } else {
+                display::info(&format!("Not found: {}", assistantConfigFile.display()));
+            }
+        }
+
+        if removeCache {
+            display::step("Removing cache and temporary files");
+            if lomaFs::cmdExists("npm") {
+                let npmCacheDir = Command::new("npm")
+                    .args(["config", "get", "cache"])
+                    .output()
+                    .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+                    .unwrap_or_else(|_| {
+                        std::env::var("HOME")
+                            .map(|h| format!("{}/.npm", h))
+                            .unwrap_or_else(|_| "/tmp/.npm".to_string())
+                    });
+
+                self.cleanSubdirPattern(&npmCacheDir, "anthropic", 3);
+                self.cleanSubdirPattern(&npmCacheDir, "claude-code", 3);
+                display::success("Anthropic npm cache entries cleaned.");
+            }
+
+            self.cleanSubdirPattern("/tmp", "claude", 2);
+            display::success("Temporary files in /tmp cleaned.");
+
+            if !cfg!(windows) {
+                let _ = lomaFs::cleanShellConfigs();
+            }
+        }
 
         display::divider();
         display::step("Post-removal verification");
         let mut clean = true;
 
-        if lomaFs::claudeIsInstalled() {
-            display::warn(&format!(
-                "A 'claude' binary is still resolved: {}",
-                lomaFs::getClaudeBinary()
-            ));
-            clean = false;
-        } else {
-            display::success("'claude' binary: not found.");
+        if removeBinaries {
+            if lomaFs::claudeIsInstalled() {
+                display::warn(&format!(
+                    "A 'claude' binary is still resolved: {}",
+                    lomaFs::getClaudeBinary()
+                ));
+                clean = false;
+            } else {
+                display::success("'claude' binary: not found.");
+            }
         }
 
-        if assistantDir.exists() {
-            display::warn(&format!("Directory still present: {}", assistantDir.display()));
-            clean = false;
-        } else {
-            display::success("Assistant configuration directory: removed.");
+        if removeConfigs {
+            if assistantDir.exists() {
+                display::warn(&format!("Directory still present: {}", assistantDir.display()));
+                clean = false;
+            } else {
+                display::success("Assistant configuration directory: removed.");
+            }
         }
 
-        if assistantConfigFile.exists() {
-            display::warn(&format!("File still present: {}", assistantConfigFile.display()));
-            clean = false;
-        } else {
-            display::success("Assistant configuration file: removed.");
+        if removeCredentials {
+            if assistantConfigFile.exists() {
+                display::warn(&format!("File still present: {}", assistantConfigFile.display()));
+                clean = false;
+            } else {
+                display::success("Assistant configuration file: removed.");
+            }
         }
 
         println!();
         if clean {
-            display::success("Claude completely removed. System is clean.");
+            display::success("Targeted Claude removal completed cleanly.");
         } else {
-            display::warn("Removal mostly successful. Some items remain (see above).");
+            display::warn("Some targeted components could not be fully removed.");
             display::info("Re-run the remove command or delete them manually.");
         }
 
