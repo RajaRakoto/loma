@@ -1,0 +1,89 @@
+[
+  {
+    "section": "Lever 1: Model Routing",
+    "vars": [
+      {"key": "LOMA_MODEL", "value": "claude-sonnet-4-5", "comment": ""},
+      {"key": "LOMA_DEFAULT_SONNET_MODEL", "value": "claude-sonnet-4-5", "comment": ""},
+      {"key": "LOMA_DEFAULT_HAIKU_MODEL", "value": "claude-haiku-4-5", "comment": ""},
+      {"key": "LOMA_DEFAULT_OPUS_MODEL", "value": "claude-sonnet-4-5", "comment": ""},
+      {"key": "LOMA_SUBAGENT_MODEL", "value": "claude-haiku-4-5", "comment": ""}
+    ]
+  },
+  {
+    "section": "Lever 2: Internal Reasoning",
+    "vars": [
+      {"key": "LOMA_EFFORT_LEVEL", "value": "medium", "comment": ""},
+      {"key": "LOMA_MAX_THINKING_TOKENS", "value": "8000", "comment": ""}
+    ]
+  },
+  {
+    "section": "Lever 3: Output Limits",
+    "vars": [
+      {"key": "LOMA_MAX_OUTPUT_TOKENS", "value": "4096", "comment": ""}
+    ]
+  },
+  {
+    "section": "Lever 4: Context Management",
+    "vars": [
+      {"key": "LOMA_AUTO_COMPACT", "value": "true", "comment": ""},
+      {"key": "LOMA_FILE_COMPACT_THRESHOLD", "value": "50%", "comment": ""},
+      {"key": "LOMA_AUTOCOMPACT_PCT", "value": "75", "comment": ""},
+      {"key": "LOMA_CLEANUP_PERIOD_DAYS", "value": "15", "comment": ""},
+      {"key": "LOMA_INCLUDE_CO_AUTHORED_BY", "value": "false", "comment": ""}
+    ]
+  },
+  {
+    "section": "Lever 5: Bash / Tool Noise",
+    "vars": [
+      {"key": "LOMA_BASH_DEFAULT_TIMEOUT_MS", "value": "30000", "comment": ""},
+      {"key": "LOMA_BASH_MAX_TIMEOUT_MS", "value": "120000", "comment": ""},
+      {"key": "LOMA_BASH_MAX_OUTPUT_LENGTH", "value": "150000", "comment": ""}
+    ]
+  },
+  {
+    "section": "Deactivations",
+    "vars": [
+      {"key": "LOMA_DISABLE_1M_CONTEXT", "value": "1", "comment": ""},
+      {"key": "LOMA_DISABLE_NONESSENTIAL_TRAFFIC", "value": "1", "comment": ""},
+      {"key": "LOMA_DISABLE_FEEDBACK_SURVEYS", "value": "1", "comment": ""},
+      {"key": "LOMA_DISABLE_TELEMETRY", "value": "1", "comment": ""},
+      {"key": "LOMA_DISABLE_ERROR_REPORTING", "value": "1", "comment": ""}
+    ]
+  },
+  {
+    "section": "External Routing (leave empty if not used)",
+    "vars": [
+      {"key": "LOMA_ANTHROPIC_BASE_URL", "value": "", "comment": ""},
+      {"key": "LOMA_ANTHROPIC_AUTH_TOKEN", "value": "", "comment": ""},
+      {"key": "LOMA_API_TIMEOUT_MS", "value": "600000", "comment": ""}
+    ]
+  },
+  {
+    "section": "Configuration Scope\nglobal → .claude/settings.json (shared, committable)\nlocal  → .claude/settings.local.json (gitignored, personal)\nask    → interactive prompt on each apply",
+    "vars": [
+      {"key": "LOMA_CONFIG_SCOPE", "value": "ask", "comment": ""}
+    ]
+  },
+  {
+    "section": "Third-Party Tools (Phase 1 — Immediate Impact)",
+    "vars": [
+      {"key": "LOMA_INSTALL_RTK", "value": "false", "comment": ""},
+      {"key": "LOMA_INSTALL_CCUSAGE", "value": "false", "comment": ""}
+    ]
+  },
+  {
+    "section": "Third-Party Tools (Phase 2 — Session Optimization)",
+    "vars": [
+      {"key": "LOMA_INSTALL_CAVEMAN", "value": "false", "comment": ""},
+      {"key": "LOMA_INSTALL_TOKEN_OPTIMIZER", "value": "false", "comment": ""}
+    ]
+  },
+  {
+    "section": "Third-Party Tools (Phase 3 — Large Projects)",
+    "vars": [
+      {"key": "LOMA_INSTALL_AGENT_BROWSER", "value": "false", "comment": ""},
+      {"key": "LOMA_INSTALL_CODE_REVIEW_GRAPH", "value": "false", "comment": ""},
+      {"key": "LOMA_INSTALL_GRAPHIFY", "value": "false", "comment": ""}
+    ]
+  }
+]
