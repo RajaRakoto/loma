@@ -688,5 +688,49 @@
 				}
 			}
 		}
+	},
+	"economy": {
+		"parent-title": "ECONOMY & TOKEN OPTIMIZATION",
+		"rules": {
+			"title": "General Token-Saving Rules",
+			"body": [
+				{
+					"items": [
+						"Use /clear between unrelated tasks to start with a fresh, empty context.",
+						"Use /compact manually at ~50% context limit to prune transient history.",
+						"For multi-step tasks, start with an explicit design plan before coding. Adjusting a plan is cheaper than undoing steps.",
+						"Use precise prompts containing: the file, exact objective, and constraints. Do not ask vague questions.",
+						"Delegate mechanical tasks or research to subagents using cheaper models."
+					]
+				}
+			]
+		},
+		"config": {
+			"title": "Model Routing & Auto-Compaction Configuration",
+			"body": [
+				{
+					"items": [
+						"Route subagents to a cheaper model (e.g. claude-haiku-4-5) to save tokens.",
+						"Set effortLevel to medium to reduce silent thinking tokens.",
+						"Limit max output tokens to 4096 to prevent verbose explanations.",
+						"Configure auto-compaction aggressively (COMPACT_ON_DEMAND: true, 50% threshold) to maintain a lean context."
+					]
+				}
+			]
+		},
+		"tools": {
+			"title": "Third-Party Optimization Tools",
+			"body": [
+				{
+					"items": [
+						"RTK (Rust Token Kill): Compresses shell output (git, tsc, cargo, tests, docker) by 70% to 92%.",
+						"Caveman: Enforces telegraphic answers to minimize output tokens.",
+						"ccusage: Compiles local token consumption reports.",
+						"Code Review Graph: Maps dependencies to target only modified files.",
+						"Graphify: Builds codebase knowledge graphs, avoiding massive file reads."
+					]
+				}
+			]
+		}
 	}
 }

@@ -240,6 +240,21 @@ const SELECTABLE_ITEMS: &[CheckboxOption] = &[
         label: "[POCKETBASE] PocketBase Typegen",
         path: &["pocketbase", "typegen"],
     },
+    CheckboxOption {
+        id: "economy.rules",
+        label: "[ECONOMY] General Token-Saving Rules",
+        path: &["economy", "rules"],
+    },
+    CheckboxOption {
+        id: "economy.config",
+        label: "[ECONOMY] Config Guidelines (Model Routing & Compact)",
+        path: &["economy", "config"],
+    },
+    CheckboxOption {
+        id: "economy.tools",
+        label: "[ECONOMY] Third-Party Optimization Tools",
+        path: &["economy", "tools"],
+    },
 ];
 
 pub fn loadInjectJson() -> Value {
@@ -362,7 +377,12 @@ pub fn get_file_name(id: &str, category: &str) -> String {
     let last_part = parts.last().unwrap_or(&id);
     let base_name = last_part.replace('-', "_").to_uppercase();
     let suffix = category.to_uppercase();
-    format!("{}_{}.md", base_name, suffix)
+    
+    if base_name == suffix || base_name.ends_with(&format!("_{}", suffix)) || base_name.ends_with(&suffix) {
+        format!("{}.md", base_name)
+    } else {
+        format!("{}_{}.md", base_name, suffix)
+    }
 }
 
 #[derive(Debug)]
@@ -489,6 +509,7 @@ pub fn promptAndGenerateClaude() -> crate::Result<()> {
         "taskmaster",
         "context7",
         "pocketbase",
+        "economy",
     ];
     let parent = Select::new("Choose parent-section:", parent_sections)
         .prompt()
@@ -711,6 +732,7 @@ pub fn promptAndGenerate() -> crate::Result<Option<String>> {
         "taskmaster",
         "context7",
         "pocketbase",
+        "economy",
     ];
 
     for secKey in sectionKeys {
