@@ -19,38 +19,38 @@ pub fn runInit(assistant: &str) -> crate::Result<()> {
         display::info(".loma/loma.env configuration file already exists.");
     } else {
         display::step("Creating .loma/loma.env configuration file...");
-        let examplePath = std::path::Path::new(".env.example");
-        if examplePath.exists() {
-            match fs::copy(examplePath, &lomaEnvPath) {
-                Ok(_) => display::success("Copied .env.example to .loma/loma.env successfully."),
-                Err(e) => {
-                    display::error(&format!("Failed to copy .env.example to .loma/loma.env: {}", e));
-                    return Err(crate::Error::other("Failed to copy .env.example"));
+        let embeddedEnv = include_str!("../json/loma_env_defaults.json");
+        let sections: serde_json::Value = serde_json::from_str(embeddedEnv).unwrap_or(serde_json::json!([]));
+        let mut defaultEnvContent = String::new();
+        if let Some(arr) = sections.as_array() {
+            for sec in arr {
+                if let Some(title) = sec["section"].as_str() {
+                    let lines: Vec<&str> = title.split('\n').collect();
+                    if lines.len() == 1 {
+                        defaultEnvContent.push_str(&format!("# ── {} ───────────────────────────────\n", title));
+                    } else {
+                        defaultEnvContent.push_str("# ── Configuration Scope ───────────────────────────────────────────\n");
+                        for line in lines {
+                            defaultEnvContent.push_str(&format!("# {}\n", line));
+                        }
+                    }
                 }
+                if let Some(vars) = sec["vars"].as_array() {
+                    for var in vars {
+                        let key = var["key"].as_str().unwrap_or("");
+                        let value = var["value"].as_str().unwrap_or("");
+                        defaultEnvContent.push_str(&format!("{}={}\n", key, value));
+                    }
+                }
+                defaultEnvContent.push('\n');
             }
-        } else {
-            let defaultEnvContent = r#"# loma configuration file
+        }
 
-# CLI
-CLI_ENV=development   # development | production
-CLI_DEBUG=true
-
-# API Server
-API_HOST=127.0.0.1
-API_PORT=3000
-
-# Logging
-RUST_LOG=loma=debug,tower_http=info
-
-# CLAUDE Config
-CLAUDE_CODE_AUTO_COMPACT_WINDOW=190000
-"#;
-            match fs::write(&lomaEnvPath, defaultEnvContent) {
-                Ok(_) => display::success("Created default .loma/loma.env file."),
-                Err(e) => {
-                    display::error(&format!("Failed to write default .loma/loma.env: {}", e));
-                    return Err(crate::Error::other("Failed to write loma.env"));
-                }
+        match fs::write(&lomaEnvPath, defaultEnvContent) {
+            Ok(_) => display::success("Created default .loma/loma.env file."),
+            Err(e) => {
+                display::error(&format!("Failed to write default .loma/loma.env: {}", e));
+                return Err(crate::Error::other("Failed to write loma.env"));
             }
         }
     }

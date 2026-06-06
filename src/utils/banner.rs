@@ -18,7 +18,7 @@ pub fn showBanner() {
 }
 
 pub fn showHelp() {
-    println!("\x1b[1mUsage:\x1b[0m loma [OPTIONS] <COMMAND>");
+    println!("\x1b[1mUsage:\x1b[0m loma [OPTIONS] <COMMAND> <ASSISTANT>");
     println!();
     println!("\x1b[1mOptions:\x1b[0m");
     println!("  \x1b[32m-h, --help\x1b[0m       Print help information");
@@ -36,15 +36,17 @@ pub fn showHelp() {
     println!("    \x1b[36mupdate\x1b[0m        Update an AI assistant");
     println!("    \x1b[36moptimize\x1b[0m      Optimize configuration for an AI assistant");
     println!("    \x1b[36mgen\x1b[0m           Generate guidelines/conventions for an assistant");
+    println!("    \x1b[36msync\x1b[0m          Synchronize and repair assistant configurations (CRITICAL for structural integrity)");
     println!();
-    println!("  \x1b[35;1mMaintenance & Health\x1b[0m");
+    println!("  \x1b[35;1mMaintenance & Diagnostics\x1b[0m");
     println!("    \x1b[36mstatus\x1b[0m        Show current status of an AI assistant");
-    println!("    \x1b[36mhealth\x1b[0m        Perform diagnostic health checks on the assistant's environment");
+    println!("    \x1b[36mdoctor\x1b[0m        Perform diagnostic health checks on the global environment");
     println!("    \x1b[36mbackup\x1b[0m        Back up AI assistant configuration");
     println!("    \x1b[36mrestore\x1b[0m       Restore a previous backup of an AI assistant");
     println!();
-    println!("  \x1b[35;1mGeneral / Metadata\x1b[0m");
-    println!("    \x1b[36minfo\x1b[0m          Print application information");
+    println!("  \x1b[35;1mUtilities\x1b[0m");
+    println!("    \x1b[36musage\x1b[0m         Manage usage statistics and tracking");
+    println!("    \x1b[36mtips\x1b[0m          View useful tips, caching rules, and guidelines");
     println!();
 }
 

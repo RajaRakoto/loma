@@ -3,7 +3,7 @@ use crate::utils::fs as lomaFs;
 use std::fs;
 use std::process::Command;
 
-pub fn runHealth() -> crate::Result<()> {
+pub fn runDoctor() -> crate::Result<()> {
     display::title("Loma Global Environment Health Check");
 
     let mut healthy = true;

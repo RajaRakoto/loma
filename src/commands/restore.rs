@@ -140,10 +140,14 @@ pub fn runRestore(assistant: &str) -> crate::Result<()> {
 
         let mut relativePreArgs = Vec::new();
         if assistantDir.exists() {
-            relativePreArgs.push(assistantDir.file_name().unwrap().to_string_lossy().into_owned());
+            if let Some(name) = assistantDir.file_name() {
+                relativePreArgs.push(name.to_string_lossy().into_owned());
+            }
         }
         if assistantConfigFile.exists() {
-            relativePreArgs.push(assistantConfigFile.file_name().unwrap().to_string_lossy().into_owned());
+            if let Some(name) = assistantConfigFile.file_name() {
+                relativePreArgs.push(name.to_string_lossy().into_owned());
+            }
         }
 
         if !relativePreArgs.is_empty() {

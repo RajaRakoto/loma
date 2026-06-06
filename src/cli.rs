@@ -24,6 +24,7 @@ pub enum Commands {
     // ── General / Metadata ──
 
     /// Print application information.
+    #[command(hide = true)]
     Info {
         /// Show detailed information (version, features, repo URL).
         #[arg(short, long)]
@@ -35,28 +36,24 @@ pub enum Commands {
     /// Initialize configuration files for loma.
     Init {
         /// The assistant to target.
-        #[arg(default_value = "claude")]
         assistant: String,
     },
 
     /// Install an AI assistant.
     Install {
         /// The assistant to target.
-        #[arg(default_value = "claude")]
         assistant: String,
     },
 
     /// Completely remove an AI assistant and all associated files.
     Remove {
         /// The assistant to target.
-        #[arg(default_value = "claude")]
         assistant: String,
     },
 
     /// Remove then cleanly reinstall an AI assistant.
     Reinstall {
         /// The assistant to target.
-        #[arg(default_value = "claude")]
         assistant: String,
     },
 
@@ -65,21 +62,18 @@ pub enum Commands {
     /// Update an AI assistant.
     Update {
         /// The assistant to target.
-        #[arg(default_value = "claude")]
         assistant: String,
     },
 
     /// Optimize configuration for an AI assistant.
     Optimize {
         /// The assistant to target.
-        #[arg(default_value = "claude")]
         assistant: String,
     },
 
     /// Generate guidelines/conventions for an assistant.
     Gen {
         /// The assistant to target (e.g. claude -> CLAUDE.md).
-        #[arg(default_value = "claude")]
         assistant: String,
     },
 
@@ -88,31 +82,41 @@ pub enum Commands {
     /// Show current status of an AI assistant.
     Status {
         /// The assistant to target.
-        #[arg(default_value = "claude")]
         assistant: String,
     },
 
     /// Perform diagnostic health checks on the assistant's environment.
-    Health,
+    Doctor,
 
     /// Back up AI assistant configuration.
     Backup {
         /// The assistant to target.
-        #[arg(default_value = "claude")]
         assistant: String,
     },
 
     /// Restore a previous backup of an AI assistant.
     Restore {
         /// The assistant to target.
-        #[arg(default_value = "claude")]
         assistant: String,
     },
 
     /// Synchronize and repair assistant configurations and native structure.
     Sync {
         /// The assistant to target.
-        #[arg(default_value = "claude")]
+        assistant: String,
+    },
+
+    // ── Dedicated Utilities ──
+
+    /// Manage usage statistics and tracking.
+    Usage {
+        /// The assistant to target.
+        assistant: String,
+    },
+
+    /// View useful tips and guidelines.
+    Tips {
+        /// The assistant to target.
         assistant: String,
     },
 
@@ -168,7 +172,7 @@ mod tests {
 
     #[test]
     fn parse_status() {
-        let cli = Cli::try_parse_from(["loma", "status"]).unwrap();
+        let cli = Cli::try_parse_from(["loma", "status", "claude"]).unwrap();
         match cli.command {
             Some(Commands::Status { assistant }) => assert_eq!(assistant, "claude"),
             _ => panic!("expected Status"),
@@ -177,7 +181,7 @@ mod tests {
 
     #[test]
     fn parse_install() {
-        let cli = Cli::try_parse_from(["loma", "install"]).unwrap();
+        let cli = Cli::try_parse_from(["loma", "install", "claude"]).unwrap();
         match cli.command {
             Some(Commands::Install { assistant }) => assert_eq!(assistant, "claude"),
             _ => panic!("expected Install"),

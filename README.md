@@ -151,21 +151,22 @@ Loma provides a full suite of commands to handle the lifecycle and optimization 
 
 | Command | Description |
 | :--- | :--- |
-| `loma init [<assistant>]` | Bootstraps workspace-specific configurations (`.loma/loma.env` and scaffolds native `.claude/` directories). |
-| `loma install [<assistant>]` | Installs the managed AI coding assistant package globally via the package manager. |
-| `loma status [<assistant>]` | Displays the current installation status, active process tree, and installed versions. |
-| `loma health [<assistant>]` | Runs diagnostic diagnostic routines verifying system prerequisites, permissions, and network connectivity. |
-| `loma update [<assistant>]` | Upgrades the installed AI coding assistant package to the latest available release. |
-| `loma backup [<assistant>]` | Starts an interactive wizard to compress and back up configurations relative to the target's natural directories. |
-| `loma restore [<assistant>]` | Starts an interactive wizard to safely restore configuration backups directly back into place. |
-| `loma reinstall [<assistant>]` | Purges the current assistant binary and configs, followed by a clean setup. |
-| `loma remove [<assistant>]` | Completely uninstalls the AI assistant binary and removes all temporary and cache folders. |
-| `loma optimize [<assistant>]` | Optimizes configurations for the targeted AI coding assistant (skeleton). |
-| `loma gen [<assistant>]` | Triggers the Multi-Stage Interactive TUI for modular, token-saving files creation in `.claude/`. |
-| `loma sync [<assistant>]` | Validates directory health, checks for duplicate hashes, and dynamically repairs `.loma/registry/injections.json`. |
+| `loma init <assistant>` | Bootstraps workspace-specific configurations (`.loma/loma.env` and scaffolds native `.claude/` directories). |
+| `loma install <assistant>` | Installs the managed AI coding assistant package globally via the package manager. |
+| `loma status <assistant>` | Displays the current installation status, active process tree, and installed versions. |
+| `loma doctor` | Runs diagnostic diagnostic routines verifying system prerequisites, permissions, and network connectivity. |
+| `loma update <assistant>` | Upgrades the installed AI coding assistant package to the latest available release. |
+| `loma backup <assistant>` | Starts an interactive wizard to compress and back up configurations relative to the target's natural directories. |
+| `loma restore <assistant>` | Starts an interactive wizard to safely restore configuration backups directly back into place. |
+| `loma reinstall <assistant>` | Purges the current assistant binary and configs, followed by a clean setup. |
+| `loma remove <assistant>` | Completely uninstalls the AI assistant binary and removes all temporary and cache folders. |
+| `loma optimize <assistant>` | Optimizes configurations for the targeted AI coding assistant. |
+| `loma gen <assistant>` | Triggers the Multi-Stage Interactive TUI for modular, token-saving files creation in `.claude/`. |
+| `loma sync <assistant>` | Validates directory health, checks for duplicate hashes, and dynamically repairs `.loma/registry/injections.json`. |
+| `loma usage <assistant>` | Manages usage statistics and tracking. |
+| `loma tips <assistant>` | Views useful tips, caching rules, and guidelines. |
 | `loma api [--port <port>]` | Starts the embedded Axum HTTP server to expose control endpoints. |
 | `loma run [--mode <mode>]` | Runs custom background logic or integration hooks. |
-| `loma info [--verbose]` | Prints CLI binary metadata, compiled features, and repository coordinates. |
 
 ---
 
@@ -175,7 +176,7 @@ To maximize the efficiency of your AI coding assistant and save token costs, app
 
 1. **Precision Context**: Only feed the files you are actively working on. Avoid passing entire large directories if only a single module needs to be edited.
 2. **Strict Rule Injections**: Use `.claude/rules/` to restrict verbose responses, prevent the AI from refactoring adjacent unrelated code, and force concise, surgical updates.
-3. **Environment Hygiene**: Periodically run `loma health` to ensure your system runtimes are optimal and network latency to registries is minimized.
+3. **Environment Hygiene**: Periodically run `loma doctor` to ensure your system runtimes are optimal and network latency to registries is minimized.
 4. **History Rotation**: Large prompt histories can accumulate bloat over time. Make frequent use of `loma backup` and occasionally wipe log caches using `loma reinstall` to start fresh.
 
 ---
@@ -186,16 +187,17 @@ Here is a curated list of high-quality tools, proxies, and libraries within the 
 
 | Repository | Description | Key Focus / Benefit |
 | :--- | :--- | :--- |
-| [🔗 code-review-graph](https://github.com/tirth8205/code-review-graph) | Local-first code intelligence graph for MCP and CLI. Builds a persistent map of your codebase. | Reduces context on reviews & large workflows. |
-| [🔗 claude-context](https://github.com/zilliztech/claude-context) | Code search Model Context Protocol (MCP) server designed for Claude Code. | Makes the entire codebase searchable context. |
-| [🔗 context-mode](https://github.com/mksglu/context-mode) | Context window optimization server for AI coding agents. | Sandboxes tool output, leading to 98% reduction. |
-| [🔗 caveman](https://github.com/juliusbrussee/caveman) | A Claude Code custom skill that forces the model to speak like a caveman. | Cuts 65% of output token consumption. |
-| [🔗 ccusage](https://github.com/ryoppippi/ccusage) | Diagnostic token analyzer for local coding agent logs. | Estimates token consumption and real costs. |
-| [🔗 token-optimizer](https://github.com/alexgreensh/token-optimizer) | Diagnostic tool designed to identify and fix "ghost tokens" inside contexts. | Prevents model context decay and confusion. |
-| [🔗 rtk](https://github.com/rtk-ai/rtk) | High-performance CLI proxy reducing LLM token consumption. | 60-90% token reduction on standard dev commands. |
-| [🔗 free-claude-code](https://github.com/Alishahryar1/free-claude-code) | Alternative runner proxy providing voice and custom integrations. | Use Claude Code for free, with voice support. |
-| [🔗 claude-task-master](https://github.com/eyaltoledano/claude-task-master) | AI-powered task orchestration framework for Cursor, Windsurf, Roo, etc. | Droppable agent workflow controller. |
-| [🔗 taskmaster-cli](https://github.com/RajaRakoto/taskmaster-cli) | Interactive command-line workflow manager orchestrating multiple agents. | Seamless planning and execution in terminal. |
+| [🔗 rtk](https://github.com/rtk-ai/rtk) | High-performance CLI proxy reducing LLM token consumption. | 60–90% token reduction on standard dev commands. |
+| [🔗 context-mode](https://github.com/mksglu/context-mode) | Context window optimization server for AI coding agents. | Sandboxes tool output, up to 98% token reduction. |
+| [🔗 claude-context](https://github.com/zilliztech/claude-context) | Code search MCP server designed for Claude Code. | Makes codebase searchable, avoids full context loading. |
+| [🔗 graphify](https://github.com/safishamsi/graphify) | AI coding assistant that builds a knowledge graph from files. | Reduces context needs in large workflows. |
+| [🔗 code-review-graph](https://github.com/tirth8205/code-review-graph) | Local-first code intelligence graph for MCP and CLI. | Persistent code map, reduces review context load. |
+| [🔗 caveman](https://github.com/juliusbrussee/caveman) | Claude Code custom skill enforcing ultra-minimal responses. | Cuts ~65% of output token usage. |
+| [🔗 token-optimizer](https://github.com/alexgreensh/token-optimizer) | Tool to detect and remove “ghost tokens” in context. | Prevents context bloat and inefficiency. |
+| [🔗 ccusage](https://github.com/ryoppippi/ccusage) | Token usage analyzer for coding agent logs. | Estimates token consumption and costs. |
+| [🔗 claude-task-master](https://github.com/eyaltoledano/claude-task-master) | AI task orchestration framework for coding agents. | Improves workflow structure, indirect efficiency. |
+| [🔗 taskmaster-cli](https://github.com/RajaRakoto/taskmaster-cli) | CLI workflow orchestrator for multi-agent execution. | Structured planning and execution in terminal. |
+| [🔗 free-claude-code](https://github.com/Alishahryar1/free-claude-code) | Alternative Claude runner with voice and integrations. | Feature-focused, not token optimization. |
 
 > 💡 **Bonus Tip:** Check out [GitHub Token Savers](https://vishnuai.in/github-token-savers) for more ways to optimize your AI-driven coding budget!
 

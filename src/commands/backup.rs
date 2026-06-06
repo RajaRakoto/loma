@@ -69,7 +69,9 @@ pub fn runBackup(assistant: &str) -> crate::Result<()> {
         let settingsFile = assistantDir.join("settings.json");
         let settingsLocalFile = assistantDir.join("settings.local.json");
         let mut relativeFiles = Vec::new();
-        let dir_name = assistantDir.file_name().unwrap().to_string_lossy();
+        let dir_name_os = assistantDir.file_name()
+            .ok_or_else(|| crate::Error::other("Invalid assistant directory path"))?;
+        let dir_name = dir_name_os.to_string_lossy();
         if settingsFile.exists() {
             relativeFiles.push(format!("{}/settings.json", dir_name));
         }
@@ -88,10 +90,14 @@ pub fn runBackup(assistant: &str) -> crate::Result<()> {
         display::step("Full backup");
         let mut relativeArgs = Vec::new();
         if assistantDir.exists() {
-            relativeArgs.push(assistantDir.file_name().unwrap().to_string_lossy().into_owned());
+            if let Some(name) = assistantDir.file_name() {
+                relativeArgs.push(name.to_string_lossy().into_owned());
+            }
         }
         if assistantConfigFile.exists() {
-            relativeArgs.push(assistantConfigFile.file_name().unwrap().to_string_lossy().into_owned());
+            if let Some(name) = assistantConfigFile.file_name() {
+                relativeArgs.push(name.to_string_lossy().into_owned());
+            }
         }
 
         if relativeArgs.is_empty() {
