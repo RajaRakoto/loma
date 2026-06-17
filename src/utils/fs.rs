@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use std::process::Command;
 
 pub use crate::utils::r#const::{
-    CLAUDE_BINARY_PATHS, CLAUDE_CONFIG_DIRS, CLAUDE_CONFIG_FILES, CLAUDE_DATA_DIRS,
+    CLAUDE_BINARY_PATHS, CLAUDE_CONFIG_DIRS, CLAUDE_DATA_DIRS,
     CLAUDE_DNF_REPO_FILES,
 };
 
@@ -27,7 +27,7 @@ pub fn getAssistantDir(assistant: &str) -> PathBuf {
 /// Get the configuration file path for a specific assistant.
 pub fn getAssistantConfigFile(assistant: &str) -> PathBuf {
     if assistant.to_lowercase() == "claude" {
-        PathBuf::from(CLAUDE_CONFIG_FILES[0])
+        PathBuf::new()
     } else {
         getLomaDir().join(format!("{}.json", assistant))
     }

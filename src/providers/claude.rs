@@ -94,13 +94,7 @@ impl ClaudeProvider {
             display::info(&format!("Not found: {}", assistantDir.display()));
         }
 
-        let assistantConfigFile = lomaFs::getAssistantConfigFile("claude");
-        if assistantConfigFile.exists() {
-            let _ = fs::remove_file(&assistantConfigFile);
-            display::success(&format!("Removed: {}", assistantConfigFile.display()));
-        } else {
-            display::info(&format!("Not found: {}", assistantConfigFile.display()));
-        }
+        // Clean npm cache pattern for anthropic/claude-code locally if npm is present
 
         // Clean npm cache pattern for anthropic/claude-code locally if npm is present
         if lomaFs::cmdExists("npm") {
@@ -214,17 +208,11 @@ impl super::AssistantProvider for ClaudeProvider {
             self.remove()?;
         }
 
-        // Check for leftover files in native workspace
         let assistantDir = lomaFs::getAssistantDir("claude");
-        let assistantConfigFile = lomaFs::getAssistantConfigFile("claude");
         let mut staleFound = false;
 
         if assistantDir.exists() {
             display::warn(&format!("Leftover configuration directory found: {}", assistantDir.display()));
-            staleFound = true;
-        }
-        if assistantConfigFile.exists() {
-            display::warn(&format!("Leftover configuration file found: {}", assistantConfigFile.display()));
             staleFound = true;
         }
 
@@ -342,12 +330,10 @@ impl super::AssistantProvider for ClaudeProvider {
 
         let isInstalled = lomaFs::claudeIsInstalled();
         let assistantDir = lomaFs::getAssistantDir("claude");
-        let assistantConfigFile = lomaFs::getAssistantConfigFile("claude");
 
         let hasConfigDir = assistantDir.exists();
-        let hasConfigFile = assistantConfigFile.exists();
 
-        if !isInstalled && !hasConfigDir && !hasConfigFile {
+        if !isInstalled && !hasConfigDir {
             display::warn("Claude Code does not appear to be installed on this system.");
             if !display::confirm("Continue anyway (residual cleanup)?") {
                 display::info("Removal cancelled.");
@@ -360,7 +346,6 @@ impl super::AssistantProvider for ClaudeProvider {
         let options = vec![
             "Binaries (global npm package & PATH binaries)",
             "Configurations (native .claude/ directory and settings)",
-            "Credentials & History (local .claude.json auth tokens)",
             "Cache & Temp Files (npm cache & temporary directories)",
         ];
 
@@ -376,7 +361,6 @@ impl super::AssistantProvider for ClaudeProvider {
 
         let mut removeBinaries = false;
         let mut removeConfigs = false;
-        let mut removeCredentials = false;
         let mut removeCache = false;
 
         for item in &selected {
@@ -384,8 +368,6 @@ impl super::AssistantProvider for ClaudeProvider {
                 removeBinaries = true;
             } else if item.starts_with("Configurations") {
                 removeConfigs = true;
-            } else if item.starts_with("Credentials") {
-                removeCredentials = true;
             } else if item.starts_with("Cache") {
                 removeCache = true;
             }
@@ -412,15 +394,7 @@ impl super::AssistantProvider for ClaudeProvider {
             }
         }
 
-        if removeCredentials {
-            display::step("Removing credentials and history");
-            if assistantConfigFile.exists() {
-                let _ = fs::remove_file(&assistantConfigFile);
-                display::success(&format!("Removed: {}", assistantConfigFile.display()));
-            } else {
-                display::info(&format!("Not found: {}", assistantConfigFile.display()));
-            }
-        }
+
 
         if removeCache {
             display::step("Removing cache and temporary files");
@@ -473,14 +447,7 @@ impl super::AssistantProvider for ClaudeProvider {
             }
         }
 
-        if removeCredentials {
-            if assistantConfigFile.exists() {
-                display::warn(&format!("File still present: {}", assistantConfigFile.display()));
-                clean = false;
-            } else {
-                display::success("Assistant configuration file: removed.");
-            }
-        }
+
 
         println!();
         if clean {
@@ -576,6 +543,8 @@ impl super::AssistantProvider for ClaudeProvider {
     fn status(&self) -> crate::Result<()> {
         display::title("Claude Status");
 
+        let assistantDir = lomaFs::getAssistantDir("claude");
+
         // 1. Binary check
         let binaryPath = lomaFs::getClaudeBinary();
         if !binaryPath.is_empty() {
@@ -601,26 +570,11 @@ impl super::AssistantProvider for ClaudeProvider {
 
         // 2. Directories & configurations check inside workspace
         display::step("Configuration & Data Directories");
-        let assistantDir = lomaFs::getAssistantDir("claude");
-        let assistantConfigFile = lomaFs::getAssistantConfigFile("claude");
-
         if assistantDir.exists() {
             let size = self.getDirSize(&assistantDir).unwrap_or(0);
             display::success(&format!("{}/ found (Size: {} bytes)", assistantDir.display(), size));
         } else {
             display::info(&format!("{}/ not found", assistantDir.display()));
-        }
-
-        if assistantConfigFile.exists() {
-            if let Ok(meta) = fs::metadata(&assistantConfigFile) {
-                display::success(&format!(
-                    "{} found (Size: {} bytes)",
-                    assistantConfigFile.display(),
-                    meta.len()
-                ));
-            }
-        } else {
-            display::info(&format!("{} not found", assistantConfigFile.display()));
         }
 
         Ok(())

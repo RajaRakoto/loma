@@ -1,7 +1,6 @@
 //! CLI constants configuration
 
 pub const CLAUDE_CONFIG_DIRS: &[&str] = &[".claude"];
-pub const CLAUDE_CONFIG_FILES: &[&str] = &[".claude.json"];
 pub const CLAUDE_DATA_DIRS: &[&str] = &[
     ".local/share/claude",
     ".cache/claude",
