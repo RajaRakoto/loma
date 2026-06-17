@@ -18,26 +18,43 @@ pub fn runBackup(assistant: &str) -> crate::Result<()> {
     }
 
     display::step("Select backup type");
-    println!("  1) JSON config only — settings.json & settings.local.json (no auth tokens)");
-    println!("  2) Full backup      — all configuration files, data, and auth tokens");
-    println!();
+    
+    let choice = if assistant.to_lowercase() == "claude" {
+        let options = vec![
+            "JSON config only — settings.json & settings.local.json (no auth tokens)",
+            "Full backup      — all configuration files and data",
+        ];
+        let selectChoice = inquire::Select::new("Choose backup type:", options)
+            .prompt()
+            .map_err(|e| crate::Error::other(e.to_string()))?;
+        if selectChoice.starts_with("JSON config only") {
+            "1".to_string()
+        } else {
+            "2".to_string()
+        }
+    } else {
+        println!("  1) JSON config only — settings.json & settings.local.json (no auth tokens)");
+        println!("  2) Full backup      — all configuration files, data, and auth tokens");
+        println!();
 
-    let mut choice = String::new();
-    loop {
-        print!("\x1b[1;33m\x1b[1m  Your choice [1/2]: \x1b[0m");
-        use std::io::{self, Write};
-        let _ = io::stdout().flush();
-        choice.clear();
-        if io::stdin().read_line(&mut choice).is_err() {
-            return Err(crate::Error::other("Failed to read user choice"));
+        let mut ch = String::new();
+        loop {
+            print!("\x1b[1;33m\x1b[1m  Your choice [1/2]: \x1b[0m");
+            use std::io::{self, Write};
+            let _ = io::stdout().flush();
+            ch.clear();
+            if io::stdin().read_line(&mut ch).is_err() {
+                return Err(crate::Error::other("Failed to read user choice"));
+            }
+            let trimmed = ch.trim();
+            if trimmed == "1" || trimmed == "2" {
+                ch = trimmed.to_string();
+                break;
+            }
+            display::warn("Invalid choice. Enter 1 or 2.");
         }
-        let trimmed = choice.trim();
-        if trimmed == "1" || trimmed == "2" {
-            choice = trimmed.to_string();
-            break;
-        }
-        display::warn("Invalid choice. Enter 1 or 2.");
-    }
+        ch
+    };
 
     // Ensure archives directory exists
     let archivesDir = lomaFs::getArchivesDir();
