@@ -186,7 +186,7 @@ fn applyMappingToFile(targetPath: &PathBuf, mapping: &EnvMapping, value: &str) -
     }
 
     let mut config: Value = if targetPath.exists() {
-        let content = fs::read_to_string(&targetPath)?;
+        let content = fs::read_to_string(targetPath)?;
         serde_json::from_str(&content).unwrap_or(json!({}))
     } else {
         json!({})
