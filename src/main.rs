@@ -107,8 +107,8 @@ async fn main() -> Result<()> {
             loma::commands::runDoctor()?;
         }
 
-        Some(Commands::Usage { assistant }) => {
-            loma::commands::runUsage(&assistant)?;
+        Some(Commands::Usage) => {
+            loma::commands::runUsage()?;
         }
 
         Some(Commands::Tips { assistant }) => {

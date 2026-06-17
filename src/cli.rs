@@ -109,10 +109,7 @@ pub enum Commands {
     // ── Dedicated Utilities ──
 
     /// Manage usage statistics and tracking.
-    Usage {
-        /// The assistant to target.
-        assistant: String,
-    },
+    Usage,
 
     /// View useful tips and guidelines.
     Tips {
