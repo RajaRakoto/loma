@@ -436,33 +436,49 @@ fn merge_markdown(existing: &str, new_content: &str) -> String {
         });
 
         if let Some(idx) = match_idx {
-            let mut merged_content = existing_sections[idx].content.clone();
-
+            let mut newLinesToAdd = Vec::new();
             for line in &new_sec.content {
                 let trimmed = line.trim();
-                if trimmed.starts_with('*') || trimmed.starts_with('-') {
-                    let clean_new = trimmed.trim_start_matches(['*', '-', ' ']);
-                    let exists = merged_content.iter().any(|existing_line| {
-                        let clean_existing = existing_line.trim().trim_start_matches(['*', '-', ' ']);
-                        clean_existing.to_lowercase() == clean_new.to_lowercase()
-                    });
-
-                    if !exists {
-                        merged_content.push(line.clone());
+                if trimmed.is_empty() {
+                    continue;
+                }
+                
+                let isDup = existing_sections[idx].content.iter().any(|existingLine| {
+                    let cleanExisting = existingLine.trim();
+                    if (trimmed.starts_with('*') || trimmed.starts_with('-')) && (cleanExisting.starts_with('*') || cleanExisting.starts_with('-')) {
+                        let cleanNewItem = trimmed.trim_start_matches(['*', '-', ' ']).to_lowercase();
+                        let cleanExistItem = cleanExisting.trim_start_matches(['*', '-', ' ']).to_lowercase();
+                        cleanNewItem == cleanExistItem
+                    } else {
+                        cleanExisting.to_lowercase() == trimmed.to_lowercase()
                     }
-                } else if !trimmed.is_empty() {
-                    let exists = merged_content.iter().any(|existing_line| {
-                        existing_line.trim() == trimmed
-                    });
-                    if !exists {
-                        merged_content.push(line.clone());
-                    }
-                } else {
-                    merged_content.push(line.clone());
+                });
+                
+                if !isDup {
+                    newLinesToAdd.push(line.clone());
                 }
             }
 
-            existing_sections[idx].content = merged_content;
+            if !newLinesToAdd.is_empty() {
+                // Trim trailing empty lines of the existing section
+                while let Some(last_line) = existing_sections[idx].content.last() {
+                    if last_line.trim().is_empty() {
+                        existing_sections[idx].content.pop();
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Add separator
+                existing_sections[idx].content.push(String::new());
+                existing_sections[idx].content.push("<!-- === FUSION SEPARATOR === -->".to_string());
+                existing_sections[idx].content.push(String::new());
+                
+                // Add new lines
+                for line in newLinesToAdd {
+                    existing_sections[idx].content.push(line);
+                }
+            }
         } else {
             existing_sections.push(new_sec);
         }
@@ -623,16 +639,12 @@ pub fn promptAndGenerateClaude() -> crate::Result<()> {
 
         if final_path.exists() {
             crate::utils::display::warn(&format!("File '{}' already exists.", filename));
-            let collision_options = vec!["merge", "overwrite", "duplicate", "cancel"];
+            let collision_options = vec!["merge", "overwrite", "duplicate"];
             let choice = Select::new("Choose collision strategy:", collision_options)
                 .prompt()
                 .map_err(|e| crate::Error::other(e.to_string()))?;
 
             match choice {
-                "cancel" => {
-                    crate::utils::display::info(&format!("Skipped: {}", filename));
-                    continue;
-                }
                 "overwrite" => {
                     fs::write(&final_path, &generated_markdown)?;
                     strategy = "overwrite".to_string();
@@ -828,5 +840,15 @@ mod tests {
         let merged = merge_markdown(existing, new_content);
         assert!(merged.contains("* Bullet 1"));
         assert!(merged.contains("* Bullet 2"));
+    }
+
+    #[test]
+    fn test_merge_markdown_with_separator() {
+        let existing = "# Coding Rules\n* Keep it simple.\n";
+        let new_content = "# Coding Rules\n* Keep it simple.\n* Avoid duplicate code.\n";
+        let merged = merge_markdown(existing, new_content);
+        assert!(merged.contains("* Keep it simple."));
+        assert!(merged.contains("<!-- === FUSION SEPARATOR === -->"));
+        assert!(merged.contains("* Avoid duplicate code."));
     }
 }

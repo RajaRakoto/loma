@@ -4,11 +4,19 @@ use std::fs;
 use std::path::Path;
 
 pub fn runGen(assistant: &str) -> crate::Result<()> {
-    if assistant.to_lowercase() == "claude" {
+    let assistant_lower = assistant.to_lowercase();
+    if assistant_lower == "claude" {
         return gen_interactive::promptAndGenerateClaude();
     }
 
-    let targetName = if assistant.to_lowercase().ends_with(".md") {
+    if assistant_lower != "copilot" && assistant_lower != "copilot.md" {
+        return Err(crate::Error::validation(format!(
+            "Unknown or unsupported assistant/template: {}. Loma gen only supports 'claude' or 'copilot'.",
+            assistant
+        )));
+    }
+
+    let targetName = if assistant_lower.ends_with(".md") {
         assistant.to_uppercase()
     } else {
         format!("{}.md", assistant.to_uppercase())
