@@ -4,7 +4,9 @@
 		"think-before-coding": {
 			"title": "Think Before Coding",
 			"body": [
-				{ "intro": "Before implementing:" },
+				{
+					"intro": "Before implementing:"
+				},
 				{
 					"items": [
 						"State your assumptions explicitly. If uncertain, ask.",
@@ -37,7 +39,9 @@
 		"surgical-changes": {
 			"title": "Surgical Changes",
 			"body": [
-				{ "intro": "When editing existing code:" },
+				{
+					"intro": "When editing existing code:"
+				},
 				{
 					"items": [
 						"Don't \"improve\" adjacent code, comments, or formatting.",
@@ -47,7 +51,9 @@
 						"Prefer incremental changes and maintain backward compatibility unless explicitly instructed otherwise."
 					]
 				},
-				{ "intro": "When your changes create orphans:" },
+				{
+					"intro": "When your changes create orphans:"
+				},
 				{
 					"items": [
 						"Remove imports/variables/functions that YOUR changes made unused.",
@@ -62,7 +68,9 @@
 		"goal-driven-execution": {
 			"title": "Goal-Driven Execution",
 			"body": [
-				{ "intro": "Transform tasks into verifiable goals:" },
+				{
+					"intro": "Transform tasks into verifiable goals:"
+				},
 				{
 					"items": [
 						"\"Add validation\" > \"Write tests for invalid inputs, then make them pass\"",
@@ -99,7 +107,9 @@
 						"The project may also include other languages, tooling, scripting environments, or paradigms. Respect and follow the established conventions, architecture, and best practices of each language or ecosystem used in the repository."
 					]
 				},
-				{ "intro": "Follow naming conventions strictly:" },
+				{
+					"intro": "Follow naming conventions strictly:"
+				},
 				{
 					"items": [
 						"`camelCase` for functions",
@@ -132,17 +142,6 @@
 	},
 	"git": {
 		"parent-title": "GIT",
-		"identity": {
-			"title": "Required Git Identity",
-			"body": [
-				{
-					"items": [
-						"Always maintain a clean, professional, and human-looking Git history.",
-						"Never use \"Claude\", \"Anthropic\", AI-related identities, or AI-generated signatures in Git authorship, commit metadata, contributors, or co-authors."
-					]
-				}
-			]
-		},
 		"commit-rules": {
 			"title": "Commit Rules",
 			"body": [
@@ -417,88 +416,201 @@
 		"filesystem-search": {
 			"title": "Filesystem & Search",
 			"table": {
-				"columns": ["Raw (forbidden)", "RTK (required)"],
+				"columns": [
+					"Raw (forbidden)",
+					"RTK (required)"
+				],
 				"rows": [
-					["`ls`", "`rtk ls`"],
-					["`tree`", "`rtk tree`"],
-					["`cat <file>`", "`rtk read <file>`"],
-					["`find`", "`rtk find`"],
-					["`grep`", "`rtk grep`"],
-					["`wc`", "`rtk wc`"],
-					["`wget`", "`rtk wget`"]
+					[
+						"`ls`",
+						"`rtk ls`"
+					],
+					[
+						"`tree`",
+						"`rtk tree`"
+					],
+					[
+						"`cat <file>`",
+						"`rtk read <file>`"
+					],
+					[
+						"`find`",
+						"`rtk find`"
+					],
+					[
+						"`grep`",
+						"`rtk grep`"
+					],
+					[
+						"`wc`",
+						"`rtk wc`"
+					],
+					[
+						"`wget`",
+						"`rtk wget`"
+					]
 				]
 			}
 		},
 		"git-github": {
 			"title": "Git & GitHub",
 			"table": {
-				"columns": ["Raw (forbidden)", "RTK (required)"],
+				"columns": [
+					"Raw (forbidden)",
+					"RTK (required)"
+				],
 				"rows": [
-					["`git log`, `git status`, `git show`", "`rtk git`"],
-					["`git diff`", "`rtk diff`"],
-					["`gh`", "`rtk gh`"]
+					[
+						"`git log`, `git status`, `git show`",
+						"`rtk git`"
+					],
+					[
+						"`git diff`",
+						"`rtk diff`"
+					],
+					[
+						"`gh`",
+						"`rtk gh`"
+					]
 				]
 			}
 		},
 		"build-test-lint": {
 			"title": "Build, Test & Lint",
 			"table": {
-				"columns": ["Raw (forbidden)", "RTK (required)"],
+				"columns": [
+					"Raw (forbidden)",
+					"RTK (required)"
+				],
 				"rows": [
-					["`bun test`", "`rtk test bun test`"],
-					["`npx playwright`", "`rtk playwright`"],
-					["`bunx tsc` / `npx tsc`", "`rtk tsc`"],
-					["`bunx eslint` / `npx eslint`", "`rtk lint`"],
-					["`npx prettier` / `npx biome`", "`rtk format`"],
-					["`bun run <script>`", "`rtk npm bun run <script>`"],
-					["`bunx <tool>` / `npx <tool>`", "`rtk npx <tool>`"]
+					[
+						"`bun test`",
+						"`rtk test bun test`"
+					],
+					[
+						"`npx playwright`",
+						"`rtk playwright`"
+					],
+					[
+						"`bunx tsc` / `npx tsc`",
+						"`rtk tsc`"
+					],
+					[
+						"`bunx eslint` / `npx eslint`",
+						"`rtk lint`"
+					],
+					[
+						"`npx prettier` / `npx biome`",
+						"`rtk format`"
+					],
+					[
+						"`bun run <script>`",
+						"`rtk npm bun run <script>`"
+					],
+					[
+						"`bunx <tool>` / `npx <tool>`",
+						"`rtk npx <tool>`"
+					]
 				]
 			}
 		},
 		"data-environment": {
 			"title": "Data & Environment",
 			"table": {
-				"columns": ["Raw (forbidden)", "RTK (required)"],
+				"columns": [
+					"Raw (forbidden)",
+					"RTK (required)"
+				],
 				"rows": [
-					["`cat file.json` / JSON output", "`rtk json <file>`"],
-					["`cat package.json`", "`rtk deps`"],
-					["`printenv` / `env`", "`rtk env`"],
-					["`curl`", "`rtk curl`"]
+					[
+						"`cat file.json` / JSON output",
+						"`rtk json <file>`"
+					],
+					[
+						"`cat package.json`",
+						"`rtk deps`"
+					],
+					[
+						"`printenv` / `env`",
+						"`rtk env`"
+					],
+					[
+						"`curl`",
+						"`rtk curl`"
+					]
 				]
 			}
 		},
 		"docker": {
 			"title": "Docker",
 			"table": {
-				"columns": ["Raw (forbidden)", "RTK (required)"],
-				"rows": [["`docker`", "`rtk docker`"]]
+				"columns": [
+					"Raw (forbidden)",
+					"RTK (required)"
+				],
+				"rows": [
+					[
+						"`docker`",
+						"`rtk docker`"
+					]
+				]
 			}
 		},
 		"output-control": {
 			"title": "Output Control",
 			"table": {
-				"columns": ["When", "RTK (required)"],
+				"columns": [
+					"When",
+					"RTK (required)"
+				],
 				"rows": [
-					["Only need errors/warnings", "`rtk err <cmd>`"],
-					["Need a compact summary", "`rtk summary <cmd>`"],
-					["Need a 2-line technical summary", "`rtk smart <file or cmd>`"],
-					["Filtering log output", "`rtk log <cmd>`"],
-					["Unix pipe filtering", "`<cmd> | rtk pipe`"]
+					[
+						"Only need errors/warnings",
+						"`rtk err <cmd>`"
+					],
+					[
+						"Need a compact summary",
+						"`rtk summary <cmd>`"
+					],
+					[
+						"Need a 2-line technical summary",
+						"`rtk smart <file or cmd>`"
+					],
+					[
+						"Filtering log output",
+						"`rtk log <cmd>`"
+					],
+					[
+						"Unix pipe filtering",
+						"`<cmd> | rtk pipe`"
+					]
 				]
 			}
 		},
 		"session-audit": {
 			"title": "Session Audit",
 			"table": {
-				"columns": ["Command", "Purpose"],
+				"columns": [
+					"Command",
+					"Purpose"
+				],
 				"rows": [
-					["`rtk gain`", "Token savings summary for current session"],
+					[
+						"`rtk gain`",
+						"Token savings summary for current session"
+					],
 					[
 						"`rtk discover`",
 						"Find missed RTK opportunities in Claude Code history"
 					],
-					["`rtk session`", "RTK adoption rate across sessions"],
-					["`rtk rewrite <cmd>`", "Get the RTK equivalent of any raw command"]
+					[
+						"`rtk session`",
+						"RTK adoption rate across sessions"
+					],
+					[
+						"`rtk rewrite <cmd>`",
+						"Get the RTK equivalent of any raw command"
+					]
 				]
 			}
 		}
@@ -519,7 +631,10 @@
 		"key-commands": {
 			"title": "Key Commands",
 			"table": {
-				"columns": ["Command", "Purpose"],
+				"columns": [
+					"Command",
+					"Purpose"
+				],
 				"rows": [
 					[
 						"`task-master show <id>`",
@@ -576,7 +691,9 @@
 						"The PocketBase MCP server is the mandatory interface for all PocketBase operations. Never use `curl`, raw HTTP, or the Admin UI for operations the MCP server can handle."
 					]
 				},
-				{ "intro": "Priority order:" },
+				{
+					"intro": "Priority order:"
+				},
 				{
 					"items": [
 						"MCP PocketBase server — always first, for all operations.",
@@ -589,7 +706,10 @@
 		"available-tools": {
 			"title": "Available Tools",
 			"table": {
-				"columns": ["Category", "Tools"],
+				"columns": [
+					"Category",
+					"Tools"
+				],
 				"rows": [
 					[
 						"Collections",
@@ -603,9 +723,18 @@
 						"Migrations",
 						"create_migration, apply_migration, list_migrations, revert_migration"
 					],
-					["Monitoring", "list_logs, get_logs_stats"],
-					["Users", "authenticate_user, create_user"],
-					["Database", "backup_database"]
+					[
+						"Monitoring",
+						"list_logs, get_logs_stats"
+					],
+					[
+						"Users",
+						"authenticate_user, create_user"
+					],
+					[
+						"Database",
+						"backup_database"
+					]
 				]
 			}
 		},
@@ -668,14 +797,23 @@
 			"generated-types": {
 				"title": "Generated Types Reference",
 				"table": {
-					"columns": ["Type", "Description"],
+					"columns": [
+						"Type",
+						"Description"
+					],
 					"rows": [
 						[
 							"Collections",
 							"Const object mapping collection names (PascalCase > ID)"
 						],
-						["[Name]Record", "Raw record type (schema fields only)"],
-						["[Name]Response", "API response type (record + system fields)"],
+						[
+							"[Name]Record",
+							"Raw record type (schema fields only)"
+						],
+						[
+							"[Name]Response",
+							"API response type (record + system fields)"
+						],
 						[
 							"[Name][Field]Options",
 							"Union type for select fields with defined values"
@@ -687,50 +825,6 @@
 					]
 				}
 			}
-		}
-	},
-	"economy": {
-		"parent-title": "ECONOMY & TOKEN OPTIMIZATION",
-		"rules": {
-			"title": "General Token-Saving Rules",
-			"body": [
-				{
-					"items": [
-						"Use /clear between unrelated tasks to start with a fresh, empty context.",
-						"Use /compact manually at ~50% context limit to prune transient history.",
-						"For multi-step tasks, start with an explicit design plan before coding. Adjusting a plan is cheaper than undoing steps.",
-						"Use precise prompts containing: the file, exact objective, and constraints. Do not ask vague questions.",
-						"Delegate mechanical tasks or research to subagents using cheaper models."
-					]
-				}
-			]
-		},
-		"config": {
-			"title": "Model Routing & Auto-Compaction Configuration",
-			"body": [
-				{
-					"items": [
-						"Route subagents to a cheaper model (e.g. claude-haiku-4-5) to save tokens.",
-						"Set effortLevel to medium to reduce silent thinking tokens.",
-						"Limit max output tokens to 4096 to prevent verbose explanations.",
-						"Configure auto-compaction aggressively (COMPACT_ON_DEMAND: true, 50% threshold) to maintain a lean context."
-					]
-				}
-			]
-		},
-		"tools": {
-			"title": "Third-Party Optimization Tools",
-			"body": [
-				{
-					"items": [
-						"RTK (Rust Token Kill): Compresses shell output (git, tsc, cargo, tests, docker) by 70% to 92%.",
-						"Caveman: Enforces telegraphic answers to minimize output tokens.",
-						"ccusage: Compiles local token consumption reports.",
-						"Code Review Graph: Maps dependencies to target only modified files.",
-						"Graphify: Builds codebase knowledge graphs, avoiding massive file reads."
-					]
-				}
-			]
 		}
 	}
 }

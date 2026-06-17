@@ -57,33 +57,5 @@
       {"key": "LOMA_ANTHROPIC_AUTH_TOKEN", "value": "", "comment": ""},
       {"key": "LOMA_API_TIMEOUT_MS", "value": "600000", "comment": ""}
     ]
-  },
-  {
-    "section": "Configuration Scope\nglobal > .claude/settings.json (shared, committable)\nlocal  > .claude/settings.local.json (gitignored, personal)\nask    > interactive prompt on each apply",
-    "vars": [
-      {"key": "LOMA_CONFIG_SCOPE", "value": "ask", "comment": ""}
-    ]
-  },
-  {
-    "section": "Third-Party Tools (Phase 1 — Immediate Impact)",
-    "vars": [
-      {"key": "LOMA_INSTALL_RTK", "value": "false", "comment": ""},
-      {"key": "LOMA_INSTALL_CCUSAGE", "value": "false", "comment": ""}
-    ]
-  },
-  {
-    "section": "Third-Party Tools (Phase 2 — Session Optimization)",
-    "vars": [
-      {"key": "LOMA_INSTALL_CAVEMAN", "value": "false", "comment": ""},
-      {"key": "LOMA_INSTALL_TOKEN_OPTIMIZER", "value": "false", "comment": ""}
-    ]
-  },
-  {
-    "section": "Third-Party Tools (Phase 3 — Large Projects)",
-    "vars": [
-      {"key": "LOMA_INSTALL_AGENT_BROWSER", "value": "false", "comment": ""},
-      {"key": "LOMA_INSTALL_CODE_REVIEW_GRAPH", "value": "false", "comment": ""},
-      {"key": "LOMA_INSTALL_GRAPHIFY", "value": "false", "comment": ""}
-    ]
   }
 ]

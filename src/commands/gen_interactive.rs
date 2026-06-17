@@ -240,21 +240,6 @@ const SELECTABLE_ITEMS: &[CheckboxOption] = &[
         label: "[POCKETBASE] PocketBase Typegen",
         path: &["pocketbase", "typegen"],
     },
-    CheckboxOption {
-        id: "economy.rules",
-        label: "[ECONOMY] General Token-Saving Rules",
-        path: &["economy", "rules"],
-    },
-    CheckboxOption {
-        id: "economy.config",
-        label: "[ECONOMY] Config Guidelines (Model Routing & Compact)",
-        path: &["economy", "config"],
-    },
-    CheckboxOption {
-        id: "economy.tools",
-        label: "[ECONOMY] Third-Party Optimization Tools",
-        path: &["economy", "tools"],
-    },
 ];
 
 pub fn loadInjectJson() -> Value {
@@ -525,16 +510,17 @@ pub fn promptAndGenerateClaude() -> crate::Result<()> {
         "taskmaster",
         "context7",
         "pocketbase",
-        "economy",
     ];
     let parent = Select::new("Choose parent-section:", parent_sections)
         .prompt()
         .map_err(|e| crate::Error::other(e.to_string()))?;
 
+    let parent_key = parent;
+
     crate::utils::display::step("Step 2: Choose associated sections");
     let filtered_options: Vec<CheckboxOption> = SELECTABLE_ITEMS
         .iter()
-        .filter(|opt| opt.path.first() == Some(&parent))
+        .filter(|opt| opt.path.first() == Some(&parent_key))
         .cloned()
         .collect();
 
@@ -562,10 +548,10 @@ pub fn promptAndGenerateClaude() -> crate::Result<()> {
 
     for opt in &selected {
         let id_lower = opt.id.to_lowercase();
-        if id_lower.contains("rules") || parent == "dev" || parent == "git" || parent == "context7" {
+        if id_lower.contains("rules") || parent_key == "dev" || parent_key == "git" || parent_key == "context7" {
             rules_score += 1;
         }
-        if id_lower.contains("tooling") || id_lower.contains("automation") || id_lower.contains("skills") || parent == "rtk" {
+        if id_lower.contains("tooling") || id_lower.contains("automation") || id_lower.contains("skills") || parent_key == "rtk" {
             skills_score += 1;
         }
         if id_lower.contains("persona") || id_lower.contains("reviewer") || id_lower.contains("agent") {
@@ -586,7 +572,7 @@ pub fn promptAndGenerateClaude() -> crate::Result<()> {
         "rules"
     };
 
-    let destinations = vec!["rules", "agents", "skills", "commands"];
+    let destinations = vec!["rules", "agents", "skills", "commands", "CLAUDE.md"];
     let starting_cursor = destinations.iter().position(|&d| d == default_dest).unwrap_or(0);
 
     let destination = Select::new("Choose Claude destination:", destinations)
@@ -601,9 +587,13 @@ pub fn promptAndGenerateClaude() -> crate::Result<()> {
         preview_list.push(filename);
     }
 
-    println!(".claude/{}/", destination);
-    for name in &preview_list {
-        println!("├── {}", name);
+    if destination == "CLAUDE.md" {
+        println!("CLAUDE.md (Root file)");
+    } else {
+        println!(".claude/{}/", destination);
+        for name in &preview_list {
+            println!("├── {}", name);
+        }
     }
     println!();
 
@@ -624,78 +614,139 @@ pub fn promptAndGenerateClaude() -> crate::Result<()> {
         HashMap::new()
     };
 
-    for (i, opt) in selected.iter().enumerate() {
-        let filename = &preview_list[i];
-        let mut final_path = PathBuf::from(".claude").join(destination).join(filename);
+    if destination == "CLAUDE.md" {
+        let mut full_markdown = String::new();
+        for opt in &selected {
+            let mut currentVal = &jsonRoot;
+            for p in opt.path {
+                if let Some(nextVal) = currentVal.get(*p) {
+                    currentVal = nextVal;
+                }
+            }
+            let generated_markdown = renderNode(currentVal, opt.path.len());
+            full_markdown.push_str(&generated_markdown);
+            full_markdown.push('\n');
+        }
+
+        let final_path = PathBuf::from("CLAUDE.md");
         let mut strategy = "create".to_string();
 
-        let mut currentVal = &jsonRoot;
-        for p in opt.path {
-            if let Some(nextVal) = currentVal.get(*p) {
-                currentVal = nextVal;
-            }
-        }
-        let generated_markdown = renderNode(currentVal, opt.path.len());
-
         if final_path.exists() {
-            crate::utils::display::warn(&format!("File '{}' already exists.", filename));
-            let collision_options = vec!["merge", "overwrite", "duplicate"];
+            crate::utils::display::warn("File 'CLAUDE.md' already exists.");
+            let collision_options = vec!["merge", "overwrite"];
             let choice = Select::new("Choose collision strategy:", collision_options)
                 .prompt()
                 .map_err(|e| crate::Error::other(e.to_string()))?;
 
             match choice {
                 "overwrite" => {
-                    fs::write(&final_path, &generated_markdown)?;
+                    fs::write(&final_path, &full_markdown)?;
                     strategy = "overwrite".to_string();
-                    crate::utils::display::success(&format!("Overwritten: {}", final_path.display()));
+                    crate::utils::display::success("Overwritten: CLAUDE.md");
                 }
                 "merge" => {
                     let existing_content = fs::read_to_string(&final_path)?;
-                    let merged = merge_markdown(&existing_content, &generated_markdown);
+                    let merged = merge_markdown(&existing_content, &full_markdown);
                     fs::write(&final_path, &merged)?;
                     strategy = "merge".to_string();
-                    crate::utils::display::success(&format!("Merged: {}", final_path.display()));
-                }
-                "duplicate" => {
-                    let mut counter = 1;
-                    let base_stem = filename.replace(".md", "");
-                    let mut dup_path = final_path.clone();
-                    while dup_path.exists() {
-                        let new_filename = format!("{}_{}.md", base_stem, counter);
-                        dup_path = PathBuf::from(".claude").join(destination).join(new_filename);
-                        counter += 1;
-                    }
-                    fs::write(&dup_path, &generated_markdown)?;
-                    final_path = dup_path;
-                    strategy = "duplicate".to_string();
-                    crate::utils::display::success(&format!("Duplicated as: {}", final_path.display()));
+                    crate::utils::display::success("Merged: CLAUDE.md");
                 }
                 _ => {}
             }
         } else {
-            if let Some(parent) = final_path.parent() {
-                fs::create_dir_all(parent)?;
-            }
-            fs::write(&final_path, &generated_markdown)?;
-            crate::utils::display::success(&format!("Created: {}", final_path.display()));
+            fs::write(&final_path, &full_markdown)?;
+            crate::utils::display::success("Created: CLAUDE.md");
         }
 
         if final_path.exists() {
             if let Ok(content) = fs::read_to_string(&final_path) {
                 let hash = crate::commands::sync::calculate_hash(&content);
-                let parts: Vec<&str> = opt.id.split('.').collect();
-                let source_key = parts.last().unwrap_or(&opt.id).to_string();
-                
+                let source_ids: Vec<&str> = selected.iter().map(|opt| opt.id).collect();
                 let entry = crate::commands::sync::RegistryEntry {
                     target: final_path.to_string_lossy().to_string(),
-                    source: opt.id.to_string(),
+                    source: source_ids.join(","),
                     hash,
                     r#type: destination.to_string(),
                     date: chrono::Local::now().to_rfc3339(),
                     strategy: strategy.clone(),
                 };
-                registry.insert(source_key, entry);
+                registry.insert("CLAUDE.md".to_string(), entry);
+            }
+        }
+    } else {
+        for (i, opt) in selected.iter().enumerate() {
+            let filename = &preview_list[i];
+            let mut final_path = PathBuf::from(".claude").join(destination).join(filename);
+            let mut strategy = "create".to_string();
+
+            let mut currentVal = &jsonRoot;
+            for p in opt.path {
+                if let Some(nextVal) = currentVal.get(*p) {
+                    currentVal = nextVal;
+                }
+            }
+            let generated_markdown = renderNode(currentVal, opt.path.len());
+
+            if final_path.exists() {
+                crate::utils::display::warn(&format!("File '{}' already exists.", filename));
+                let collision_options = vec!["merge", "overwrite", "duplicate"];
+                let choice = Select::new("Choose collision strategy:", collision_options)
+                    .prompt()
+                    .map_err(|e| crate::Error::other(e.to_string()))?;
+
+                match choice {
+                    "overwrite" => {
+                        fs::write(&final_path, &generated_markdown)?;
+                        strategy = "overwrite".to_string();
+                        crate::utils::display::success(&format!("Overwritten: {}", final_path.display()));
+                    }
+                    "merge" => {
+                        let existing_content = fs::read_to_string(&final_path)?;
+                        let merged = merge_markdown(&existing_content, &generated_markdown);
+                        fs::write(&final_path, &merged)?;
+                        strategy = "merge".to_string();
+                        crate::utils::display::success(&format!("Merged: {}", final_path.display()));
+                    }
+                    "duplicate" => {
+                        let mut counter = 1;
+                        let base_stem = filename.replace(".md", "");
+                        let mut dup_path = final_path.clone();
+                        while dup_path.exists() {
+                            let new_filename = format!("{}_{}.md", base_stem, counter);
+                            dup_path = PathBuf::from(".claude").join(destination).join(new_filename);
+                            counter += 1;
+                        }
+                        fs::write(&dup_path, &generated_markdown)?;
+                        final_path = dup_path;
+                        strategy = "duplicate".to_string();
+                        crate::utils::display::success(&format!("Duplicated as: {}", final_path.display()));
+                    }
+                    _ => {}
+                }
+            } else {
+                if let Some(parent) = final_path.parent() {
+                    fs::create_dir_all(parent)?;
+                }
+                fs::write(&final_path, &generated_markdown)?;
+                crate::utils::display::success(&format!("Created: {}", final_path.display()));
+            }
+
+            if final_path.exists() {
+                if let Ok(content) = fs::read_to_string(&final_path) {
+                    let hash = crate::commands::sync::calculate_hash(&content);
+                    let parts: Vec<&str> = opt.id.split('.').collect();
+                    let source_key = parts.last().unwrap_or(&opt.id).to_string();
+                    
+                    let entry = crate::commands::sync::RegistryEntry {
+                        target: final_path.to_string_lossy().to_string(),
+                        source: opt.id.to_string(),
+                        hash,
+                        r#type: destination.to_string(),
+                        date: chrono::Local::now().to_rfc3339(),
+                        strategy: strategy.clone(),
+                    };
+                    registry.insert(source_key, entry);
+                }
             }
         }
     }
@@ -744,7 +795,6 @@ pub fn promptAndGenerate() -> crate::Result<Option<String>> {
         "taskmaster",
         "context7",
         "pocketbase",
-        "economy",
     ];
 
     for secKey in sectionKeys {
