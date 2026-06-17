@@ -146,7 +146,7 @@ async fn log_requests(req: axum::extract::Request, next: Next) -> Response {
     let method = req.method().clone();
     let uri = req.uri().clone();
     let response = next.run(req).await;
-    info!("{} {} → {}", method, uri, response.status());
+    info!("{} {} > {}", method, uri, response.status());
     response
 }
 

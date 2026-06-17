@@ -59,7 +59,7 @@
     ]
   },
   {
-    "section": "Configuration Scope\nglobal → .claude/settings.json (shared, committable)\nlocal  → .claude/settings.local.json (gitignored, personal)\nask    → interactive prompt on each apply",
+    "section": "Configuration Scope\nglobal > .claude/settings.json (shared, committable)\nlocal  > .claude/settings.local.json (gitignored, personal)\nask    > interactive prompt on each apply",
     "vars": [
       {"key": "LOMA_CONFIG_SCOPE", "value": "ask", "comment": ""}
     ]

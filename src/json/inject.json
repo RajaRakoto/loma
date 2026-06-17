@@ -65,9 +65,9 @@
 				{ "intro": "Transform tasks into verifiable goals:" },
 				{
 					"items": [
-						"\"Add validation\" → \"Write tests for invalid inputs, then make them pass\"",
-						"\"Fix the bug\" → \"Write a test that reproduces it, then make it pass\"",
-						"\"Refactor X\" → \"Ensure tests pass before and after\""
+						"\"Add validation\" > \"Write tests for invalid inputs, then make them pass\"",
+						"\"Fix the bug\" > \"Write a test that reproduces it, then make it pass\"",
+						"\"Refactor X\" > \"Ensure tests pass before and after\""
 					]
 				},
 				{
@@ -122,7 +122,7 @@
 					"items": [
 						"Write tests for: bug fixes, business logic, edge cases, public APIs, integration behavior.",
 						"Skip tests for: trivial getters/setters, pass-through wrappers, static config objects.",
-						"Bug fix workflow: reproduce → write failing test → implement fix → verify pass.",
+						"Bug fix workflow: reproduce > write failing test > implement fix > verify pass.",
 						"Style: FIRST principles · AAA structure · synchronous unless async is the subject · deterministic · tests close to source.",
 						"Mocking: mock external APIs, databases, filesystem. Don't mock internal utilities, standard libraries, or core framework behavior."
 					]
@@ -511,7 +511,7 @@
 				{
 					"items": [
 						"Taskmaster is the primary tool for managing all project tasks. Use its MCP server in every vibe coding session.",
-						"Priority order: MCP server first → CLI fallback (`task-master -h`). Never manage tasks manually."
+						"Priority order: MCP server first > CLI fallback (`task-master -h`). Never manage tasks manually."
 					]
 				}
 			]
@@ -672,7 +672,7 @@
 					"rows": [
 						[
 							"Collections",
-							"Const object mapping collection names (PascalCase → ID)"
+							"Const object mapping collection names (PascalCase > ID)"
 						],
 						["[Name]Record", "Raw record type (schema fields only)"],
 						["[Name]Response", "API response type (record + system fields)"],

@@ -9,11 +9,7 @@ pub fn logToFile(level: &str, message: &str) {
     let logDir = lomaDir.join("logs");
     let _ = std::fs::create_dir_all(&logDir);
     let logPath = logDir.join("loma.log");
-    if let Ok(mut file) = OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(&logPath)
-    {
+    if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(&logPath) {
         let _ = writeln!(file, "{} [{}] {}", timestamp, level, message);
     }
 }
@@ -39,7 +35,7 @@ pub fn error(msg: &str) {
 }
 
 pub fn step(msg: &str) {
-    println!("\n\x1b[0;34m→\x1b[0m \x1b[1m\x1b[0;36m{}\x1b[0m", msg);
+    println!("\n\x1b[0;34m>\x1b[0m \x1b[1m\x1b[0;36m{}\x1b[0m", msg);
     logToFile("STEP", msg);
 }
 
