@@ -107,6 +107,10 @@ async fn main() -> Result<()> {
             loma::commands::runDoctor()?;
         }
 
+        Some(Commands::Tutorial { tool }) => {
+            loma::commands::runTutorial(tool.as_deref())?;
+        }
+
         Some(Commands::Usage) => {
             loma::commands::runUsage()?;
         }

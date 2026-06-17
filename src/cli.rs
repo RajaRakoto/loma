@@ -108,6 +108,13 @@ pub enum Commands {
 
     // ── Dedicated Utilities ──
 
+    /// View manual setup instructions for third-party tools.
+    #[command(alias = "tutorialc")]
+    Tutorial {
+        /// The tool to view tutorial for.
+        tool: Option<String>,
+    },
+
     /// Manage usage statistics and tracking.
     Usage,
 

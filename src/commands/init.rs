@@ -83,7 +83,7 @@ pub fn runInit(assistant: &str) -> crate::Result<()> {
         if !claudeMdPath.exists() {
             let defaultClaudeMd = r#"# Claude Project Context
 
-Load rules, agents, skills and commands from `.claude/`.
+Main context loaded by the assistant at the start of each session.
 "#;
             fs::write(claudeMdPath, defaultClaudeMd)?;
             display::success("Created bootstrap CLAUDE.md");

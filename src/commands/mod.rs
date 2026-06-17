@@ -11,6 +11,7 @@ pub mod restore;
 pub mod status;
 pub mod sync;
 pub mod tips;
+pub mod tutorial;
 pub mod update;
 pub mod usage;
 
@@ -26,5 +27,6 @@ pub use restore::runRestore;
 pub use status::runStatus;
 pub use sync::runSync;
 pub use tips::runTips;
+pub use tutorial::runTutorial;
 pub use update::runUpdate;
 pub use usage::runUsage;

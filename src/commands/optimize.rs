@@ -47,34 +47,34 @@ pub fn runOptimize(assistant: &str) -> crate::Result<()> {
     }
 
     display::divider();
-    display::info("Select optimizations to apply:");
+    display::info("Select optimization to apply:");
     let options = vec![
-        "1. Claude JSON Configuration (.claude/settings.json)",
+        "1. Claude JSON Configuration",
         "2. Recommended Ignore Patterns (.claudeignore)",
         "3. Third-Party Optimization Tools",
     ];
 
-    let choice = MultiSelect::new("Choose optimizations:", options)
-        .with_help_message("Space to select, Enter to confirm")
+    let choice = Select::new("Choose optimization:", options)
         .prompt()
         .map_err(|e| crate::Error::other(e.to_string()))?;
 
-    if choice.contains(&"1. Claude JSON Configuration (.claude/settings.json)") {
-        if let Err(e) = runJsonOptimizationFlow() {
-            display::error(&format!("JSON configuration optimization failed: {}", e));
+    match choice {
+        "1. Claude JSON Configuration" => {
+            if let Err(e) = runJsonOptimizationFlow() {
+                display::error(&format!("JSON configuration optimization failed: {}", e));
+            }
         }
-    }
-
-    if choice.contains(&"2. Recommended Ignore Patterns (.claudeignore)") {
-        if let Err(e) = optimizeIgnoreFile() {
-            display::error(&format!("Ignore file optimization failed: {}", e));
+        "2. Recommended Ignore Patterns (.claudeignore)" => {
+            if let Err(e) = optimizeIgnoreFile() {
+                display::error(&format!("Ignore file optimization failed: {}", e));
+            }
         }
-    }
-
-    if choice.contains(&"3. Third-Party Optimization Tools") {
-        if let Err(e) = setupThirdPartyToolsFlow() {
-            display::error(&format!("Third-party tools setup failed: {}", e));
+        "3. Third-Party Optimization Tools" => {
+            if let Err(e) = setupThirdPartyToolsFlow() {
+                display::error(&format!("Third-party tools setup failed: {}", e));
+            }
         }
+        _ => {}
     }
 
     display::success("Optimization complete.");
@@ -295,6 +295,8 @@ fn setupThirdPartyToolsFlow() -> crate::Result<()> {
     // Create bin directory for local tools
     let _ = fs::create_dir_all(".claude/bin");
 
+    let mut installed_tools = Vec::new();
+
     for tool in selected {
         match tool {
             "RTK (Rust Token Kill)" => {
@@ -305,6 +307,7 @@ fn setupThirdPartyToolsFlow() -> crate::Result<()> {
                     .status()?;
                 if status.success() {
                     display::success("RTK installed successfully in .claude/bin");
+                    installed_tools.push("rtk");
                 } else {
                     display::error("Failed to install RTK");
                 }
@@ -321,6 +324,7 @@ fn setupThirdPartyToolsFlow() -> crate::Result<()> {
                         let _ = fs::rename(installed_path, ".claude/bin/caveman");
                     }
                     display::success("Caveman installed successfully in .claude/bin");
+                    installed_tools.push("caveman");
                 } else {
                     display::error("Failed to install Caveman");
                 }
@@ -328,6 +332,7 @@ fn setupThirdPartyToolsFlow() -> crate::Result<()> {
             "Token Optimizer (Claude Code Plugin)" => {
                 display::info("To install Token Optimizer, run inside Claude Code:");
                 display::info("  /plugin install token-optimizer@alexgreensh-token-optimizer");
+                installed_tools.push("token_optimizer");
             }
             "Code Review Graph" | "Graphify" => {
                 display::step(&format!("Installing {} locally via venv...", tool));
@@ -342,11 +347,37 @@ fn setupThirdPartyToolsFlow() -> crate::Result<()> {
                 
                 if status.success() {
                     display::success(&format!("{} installed successfully in .claude/venv", tool));
+                    if tool == "Code Review Graph" {
+                        installed_tools.push("code_review_graph");
+                    } else {
+                        installed_tools.push("graphify");
+                    }
                 } else {
                     display::error(&format!("Failed to install {}", tool));
                 }
             }
             _ => {}
+        }
+    }
+
+    if !installed_tools.is_empty() {
+        display::divider();
+        display::step("Recommended Manual Setup Steps:");
+
+        let tutorials_val: Value = serde_json::from_str(include_str!("../json/tutorials.json")).unwrap_or_else(|_| json!({}));
+        for key in installed_tools {
+            if let Some(tut) = tutorials_val.get(key) {
+                if let Some(title) = tut["title"].as_str() {
+                    println!("\n\x1b[35;1m✦ {} ✦\x1b[0m", title);
+                }
+                if let Some(steps) = tut["steps"].as_array() {
+                    for (idx, step) in steps.iter().enumerate() {
+                        if let Some(step_str) = step.as_str() {
+                            println!("  \x1b[32m{}.\x1b[0m {}", idx + 1, step_str);
+                        }
+                    }
+                }
+            }
         }
     }
     

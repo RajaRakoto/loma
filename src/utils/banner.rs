@@ -45,6 +45,7 @@ pub fn showHelp() {
     println!("    \x1b[36mrestore\x1b[0m       Restore a previous backup of an AI assistant");
     println!();
     println!("  \x1b[35;1mUtilities\x1b[0m");
+    println!("    \x1b[36mtutorial\x1b[0m      View manual setup instructions for third-party tools");
     println!("    \x1b[36musage\x1b[0m         Manage usage statistics and tracking");
     println!("    \x1b[36mtips\x1b[0m          View useful tips, caching rules, and guidelines");
     println!();

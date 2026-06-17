@@ -1,0 +1,44 @@
+{
+  "rtk": {
+    "title": "RTK (Rust Token Kill)",
+    "steps": [
+      "Initialize globally: rtk init --global",
+      "Follow the on-screen instructions to connect RTK to your assistant (e.g. Claude Code)",
+      "Restart your assistant session to enable transparent shell command output compression"
+    ]
+  },
+  "caveman": {
+    "title": "Caveman",
+    "steps": [
+      "Compress your assistant's guidelines file: /caveman-compress CLAUDE.md (or your assistant's guideline file)",
+      "Use /caveman in your assistant session to enable compact response mode (~65% token reduction)",
+      "Use /caveman lite to remove filler words, or /caveman ultra for telegraphic style",
+      "Use 'normal mode' to revert to standard responses"
+    ]
+  },
+  "token_optimizer": {
+    "title": "Token Optimizer",
+    "steps": [
+      "Install the plugin inside your assistant (e.g., for Claude Code: /plugin install token-optimizer@alexgreensh-token-optimizer)",
+      "Run the initial token audit: /token-optimizer",
+      "Setup the real-time daemon (optional): python3 ~/.claude/token-optimizer/measure.py setup-daemon",
+      "Open dashboard in your browser: http://localhost:24842/token-optimizer"
+    ]
+  },
+  "code_review_graph": {
+    "title": "Code Review Graph",
+    "steps": [
+      "Initialize and configure your assistant: code-review-graph install",
+      "Build the codebase AST graph: code-review-graph build",
+      "Use the generated MCP tools (e.g., detect_changes, get_review_context) in your assistant for token-efficient file reading"
+    ]
+  },
+  "graphify": {
+    "title": "Graphify",
+    "steps": [
+      "Connect Graphify to your assistant: graphify install",
+      "Generate your knowledge graph: /graphify . (or equivalent run)",
+      "Configure your assistant to use the graph first: graphify claude install (or equivalent for your assistant)"
+    ]
+  }
+}
