@@ -93,9 +93,7 @@ impl ClaudeProvider {
         } else {
             display::info(&format!("Not found: {}", assistantDir.display()));
         }
-
-        // Clean npm cache pattern for anthropic/claude-code locally if npm is present
-
+        
         // Clean npm cache pattern for anthropic/claude-code locally if npm is present
         if lomaFs::cmdExists("npm") {
             let npmCacheDir = Command::new("npm")

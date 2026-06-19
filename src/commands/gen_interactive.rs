@@ -598,7 +598,7 @@ pub fn promptAndGenerateClaude() -> crate::Result<()> {
     println!();
 
     crate::utils::display::step("Step 5: Confirm injection");
-    if !Confirm::new("Confirm injection of these files?")
+    if !Confirm::new("Confirm injection of these files? (y/n)")
         .prompt()
         .map_err(|e| crate::Error::other(e.to_string()))?
     {

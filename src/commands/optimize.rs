@@ -278,17 +278,16 @@ fn optimizeIgnoreFile() -> crate::Result<()> {
 
 fn setupThirdPartyToolsFlow() -> crate::Result<()> {
     display::step("Third-Party Optimization Tools Setup");
-    display::info("Tools will be installed locally in the '.claude' directory.");
     
     let options = vec![
         "RTK (Rust Token Kill)",
-        "Caveman",
-        "Token Optimizer (Claude Code Plugin)",
+        "Caveman (Plugin)",
+        "Token Optimizer (Plugin)",
         "Code Review Graph",
         "Graphify",
     ];
 
-    let selected = MultiSelect::new("Choose tools to install/configure locally:", options)
+    let selected = MultiSelect::new("Choose tools to install/configure:", options)
         .prompt()
         .map_err(|e| crate::Error::other(e.to_string()))?;
 
@@ -300,7 +299,7 @@ fn setupThirdPartyToolsFlow() -> crate::Result<()> {
     for tool in selected {
         match tool {
             "RTK (Rust Token Kill)" => {
-                display::step("Installing RTK locally...");
+                display::step("Installing RTK ...");
                 let status = Command::new("sh")
                     .env("RTK_INSTALL_DIR", ".claude/bin")
                     .args(["-c", "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"])
@@ -313,7 +312,7 @@ fn setupThirdPartyToolsFlow() -> crate::Result<()> {
                 }
             }
             "Caveman" => {
-                display::step("Installing Caveman locally...");
+                display::step("Installing Caveman ...");
                 let status = Command::new("bash")
                     .args(["-c", "curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"])
                     .status()?;
@@ -329,7 +328,7 @@ fn setupThirdPartyToolsFlow() -> crate::Result<()> {
                     display::error("Failed to install Caveman");
                 }
             }
-            "Token Optimizer (Claude Code Plugin)" => {
+            "Token Optimizer (Plugin)" => {
                 display::info("To install Token Optimizer, run inside Claude Code:");
                 display::info("  /plugin install token-optimizer@alexgreensh-token-optimizer");
                 installed_tools.push("token_optimizer");
