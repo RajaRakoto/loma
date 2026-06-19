@@ -14,6 +14,7 @@ pub mod tips;
 pub mod tutorial;
 pub mod update;
 pub mod usage;
+pub mod skills;
 
 pub use backup::runBackup;
 pub use gen::runGen;
@@ -30,3 +31,4 @@ pub use tips::runTips;
 pub use tutorial::runTutorial;
 pub use update::runUpdate;
 pub use usage::runUsage;
+pub use skills::runSkills;

@@ -131,6 +131,10 @@ async fn main() -> Result<()> {
             loma::commands::runGen(&assistant)?;
         }
 
+        Some(Commands::Skills { assistant }) => {
+            loma::commands::runSkills(&assistant)?;
+        }
+
         Some(Commands::Init { assistant }) => {
             loma::commands::runInit(&assistant)?;
         }

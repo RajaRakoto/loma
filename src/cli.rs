@@ -77,9 +77,15 @@ pub enum Commands {
         assistant: String,
     },
 
+    /// Manage custom, on-demand assistant capability skills.
+    Skills {
+        /// The assistant to target.
+        assistant: String,
+    },
+
     // ── Maintenance & Health ──
 
-    /// Show current status of an AI assistant.
+    /// Show current status of an AI assistant (beta).
     Status {
         /// The assistant to target.
         assistant: String,
@@ -100,7 +106,7 @@ pub enum Commands {
         assistant: String,
     },
 
-    /// Synchronize and repair assistant configurations and native structure.
+    /// Synchronize and repair assistant configurations and native structure (beta).
     Sync {
         /// The assistant to target.
         assistant: String,
@@ -198,6 +204,15 @@ mod tests {
         match cli.command {
             Some(Commands::Gen { assistant }) => assert_eq!(assistant, "copilot"),
             _ => panic!("expected Gen"),
+        }
+    }
+
+    #[test]
+    fn parse_skills() {
+        let cli = Cli::try_parse_from(["loma", "skills", "claude"]).unwrap();
+        match cli.command {
+            Some(Commands::Skills { assistant }) => assert_eq!(assistant, "claude"),
+            _ => panic!("expected Skills"),
         }
     }
 
