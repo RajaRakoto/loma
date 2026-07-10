@@ -163,8 +163,9 @@ Loma provides a full suite of commands to handle the lifecycle and optimization 
 | `loma optimize <assistant>` | Optimizes configurations for the targeted AI coding assistant. |
 | `loma gen <assistant>` | Triggers the Multi-Stage Interactive TUI for modular, token-saving files creation in `.claude/`. |
 | `loma sync <assistant>` | Validates directory health, checks for duplicate hashes, and dynamically repairs `.loma/registry/injections.json`. |
-| `loma usage <assistant>` | Manages usage statistics and tracking. |
+| `loma usage` | Manages usage statistics and tracking. |
 | `loma tips <assistant>` | Views useful tips, caching rules, and guidelines. |
+| `loma tutorial [tool]` | View manual setup instructions for third-party tools. |
 | `loma api [--port <port>]` | Starts the embedded Axum HTTP server to expose control endpoints. |
 | `loma run [--mode <mode>]` | Runs custom background logic or integration hooks. |
 
