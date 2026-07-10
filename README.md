@@ -1,6 +1,6 @@
 # LOMA — LLM Optimizer & Manager Assistant
 
-Loma is a modern command-line interface (CLI) tool written in Rust, designed to manage, configure, and optimize local AI coding assistants (like Claude Code). 
+Loma is a modern command-line interface (CLI) tool written in Rust, designed to manage, configure, and optimize AI coding assistants (like Claude Code). 
 
 By centralizing configuration management and prompt engineering standards, Loma reduces token consumption by **60% to 90%**, keeping your development loops fast, cost-effective, and precise.
 
