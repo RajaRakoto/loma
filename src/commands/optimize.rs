@@ -1,9 +1,9 @@
 use crate::utils::display;
+use inquire::{MultiSelect, Select};
+use serde_json::{json, Value};
 use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
-use serde_json::{json, Value};
-use inquire::{MultiSelect, Select};
 
 struct EnvMapping {
     envKey: &'static str,
@@ -12,30 +12,126 @@ struct EnvMapping {
 }
 
 const ENV_MAPPINGS: &[EnvMapping] = &[
-    EnvMapping { envKey: "LOMA_MODEL", jsonPath: "model", valType: "string" },
-    EnvMapping { envKey: "LOMA_EFFORT_LEVEL", jsonPath: "effortLevel", valType: "string" },
-    EnvMapping { envKey: "LOMA_CLEANUP_PERIOD_DAYS", jsonPath: "cleanupPeriodDays", valType: "integer" },
-    EnvMapping { envKey: "LOMA_INCLUDE_CO_AUTHORED_BY", jsonPath: "includeCoAuthoredBy", valType: "boolean" },
-    EnvMapping { envKey: "LOMA_AUTO_COMPACT", jsonPath: "auto_compact", valType: "boolean" },
-    EnvMapping { envKey: "LOMA_FILE_COMPACT_THRESHOLD", jsonPath: "cache.CLAUDE_AUTOMATIC_FILE_COMPACT", valType: "string" },
-    EnvMapping { envKey: "LOMA_DEFAULT_SONNET_MODEL", jsonPath: "env.ANTHROPIC_DEFAULT_SONNET_MODEL", valType: "string" },
-    EnvMapping { envKey: "LOMA_DEFAULT_HAIKU_MODEL", jsonPath: "env.ANTHROPIC_DEFAULT_HAIKU_MODEL", valType: "string" },
-    EnvMapping { envKey: "LOMA_DEFAULT_OPUS_MODEL", jsonPath: "env.ANTHROPIC_DEFAULT_OPUS_MODEL", valType: "string" },
-    EnvMapping { envKey: "LOMA_SUBAGENT_MODEL", jsonPath: "env.CLAUDE_CODE_SUBAGENT_MODEL", valType: "string" },
-    EnvMapping { envKey: "LOMA_MAX_THINKING_TOKENS", jsonPath: "env.MAX_THINKING_TOKENS", valType: "string" },
-    EnvMapping { envKey: "LOMA_MAX_OUTPUT_TOKENS", jsonPath: "env.CLAUDE_CODE_MAX_OUTPUT_TOKENS", valType: "string" },
-    EnvMapping { envKey: "LOMA_AUTOCOMPACT_PCT", jsonPath: "env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE", valType: "string" },
-    EnvMapping { envKey: "LOMA_DISABLE_1M_CONTEXT", jsonPath: "env.CLAUDE_CODE_DISABLE_1M_CONTEXT", valType: "string" },
-    EnvMapping { envKey: "LOMA_BASH_DEFAULT_TIMEOUT_MS", jsonPath: "env.BASH_DEFAULT_TIMEOUT_MS", valType: "string" },
-    EnvMapping { envKey: "LOMA_BASH_MAX_TIMEOUT_MS", jsonPath: "env.BASH_MAX_TIMEOUT_MS", valType: "string" },
-    EnvMapping { envKey: "LOMA_BASH_MAX_OUTPUT_LENGTH", jsonPath: "env.BASH_MAX_OUTPUT_LENGTH", valType: "string" },
-    EnvMapping { envKey: "LOMA_DISABLE_NONESSENTIAL_TRAFFIC", jsonPath: "env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC", valType: "string" },
-    EnvMapping { envKey: "LOMA_DISABLE_FEEDBACK_SURVEYS", jsonPath: "env.CLAUDE_CODE_DISABLE_FEEDBACK_SURVEYS", valType: "string" },
-    EnvMapping { envKey: "LOMA_DISABLE_TELEMETRY", jsonPath: "env.DISABLE_TELEMETRY", valType: "string" },
-    EnvMapping { envKey: "LOMA_DISABLE_ERROR_REPORTING", jsonPath: "env.DISABLE_ERROR_REPORTING", valType: "string" },
-    EnvMapping { envKey: "LOMA_ANTHROPIC_BASE_URL", jsonPath: "env.ANTHROPIC_BASE_URL", valType: "string" },
-    EnvMapping { envKey: "LOMA_ANTHROPIC_AUTH_TOKEN", jsonPath: "env.ANTHROPIC_AUTH_TOKEN", valType: "string" },
-    EnvMapping { envKey: "LOMA_API_TIMEOUT_MS", jsonPath: "env.API_TIMEOUT_MS", valType: "string" },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_MODEL",
+        jsonPath: "model",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_EFFORT_LEVEL",
+        jsonPath: "effortLevel",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_CLEANUP_PERIOD_DAYS",
+        jsonPath: "cleanupPeriodDays",
+        valType: "integer",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_INCLUDE_CO_AUTHORED_BY",
+        jsonPath: "includeCoAuthoredBy",
+        valType: "boolean",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_AUTO_COMPACT",
+        jsonPath: "auto_compact",
+        valType: "boolean",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_FILE_COMPACT_THRESHOLD",
+        jsonPath: "cache.CLAUDE_AUTOMATIC_FILE_COMPACT",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_DEFAULT_SONNET_MODEL",
+        jsonPath: "env.ANTHROPIC_DEFAULT_SONNET_MODEL",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_DEFAULT_HAIKU_MODEL",
+        jsonPath: "env.ANTHROPIC_DEFAULT_HAIKU_MODEL",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_DEFAULT_OPUS_MODEL",
+        jsonPath: "env.ANTHROPIC_DEFAULT_OPUS_MODEL",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_SUBAGENT_MODEL",
+        jsonPath: "env.CLAUDE_CODE_SUBAGENT_MODEL",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_MAX_THINKING_TOKENS",
+        jsonPath: "env.MAX_THINKING_TOKENS",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_MAX_OUTPUT_TOKENS",
+        jsonPath: "env.CLAUDE_CODE_MAX_OUTPUT_TOKENS",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_AUTOCOMPACT_PCT",
+        jsonPath: "env.CLAUDE_AUTOCOMPACT_PCT_OVERRIDE",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_DISABLE_1M_CONTEXT",
+        jsonPath: "env.CLAUDE_CODE_DISABLE_1M_CONTEXT",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_BASH_DEFAULT_TIMEOUT_MS",
+        jsonPath: "env.BASH_DEFAULT_TIMEOUT_MS",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_BASH_MAX_TIMEOUT_MS",
+        jsonPath: "env.BASH_MAX_TIMEOUT_MS",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_BASH_MAX_OUTPUT_LENGTH",
+        jsonPath: "env.BASH_MAX_OUTPUT_LENGTH",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_DISABLE_NONESSENTIAL_TRAFFIC",
+        jsonPath: "env.CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_DISABLE_FEEDBACK_SURVEYS",
+        jsonPath: "env.CLAUDE_CODE_DISABLE_FEEDBACK_SURVEYS",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_DISABLE_TELEMETRY",
+        jsonPath: "env.DISABLE_TELEMETRY",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_DISABLE_ERROR_REPORTING",
+        jsonPath: "env.DISABLE_ERROR_REPORTING",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_ANTHROPIC_BASE_URL",
+        jsonPath: "env.ANTHROPIC_BASE_URL",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_ANTHROPIC_AUTH_TOKEN",
+        jsonPath: "env.ANTHROPIC_AUTH_TOKEN",
+        valType: "string",
+    },
+    EnvMapping {
+        envKey: "LOMA_CLAUDE_API_TIMEOUT_MS",
+        jsonPath: "env.API_TIMEOUT_MS",
+        valType: "string",
+    },
 ];
 
 pub fn runOptimize(assistant: &str) -> crate::Result<()> {
@@ -99,24 +195,32 @@ fn runJsonOptimizationFlow() -> crate::Result<()> {
         }
     }
 
-    let selected = MultiSelect::new("Select categories to apply/merge to Claude settings:", options)
-        .with_help_message("Space to select, Enter to confirm, Arrow keys to navigate")
-        .prompt()
-        .map_err(|e| crate::Error::other(e.to_string()))?;
+    let selected = MultiSelect::new(
+        "Select categories to apply/merge to Claude settings:",
+        options,
+    )
+    .with_help_message("Space to select, Enter to confirm, Arrow keys to navigate")
+    .prompt()
+    .map_err(|e| crate::Error::other(e.to_string()))?;
 
     if selected.is_empty() {
         display::info("No categories selected.");
         return Ok(());
     }
 
-    let scopeChoice = match std::env::var("LOMA_CONFIG_SCOPE").unwrap_or_default().trim().to_lowercase().as_str() {
+    let scopeChoice = match std::env::var("LOMA_CONFIG_SCOPE")
+        .unwrap_or_default()
+        .trim()
+        .to_lowercase()
+        .as_str()
+    {
         "global" => "global".to_string(),
         "local" => "local".to_string(),
         _ => {
             let scopes = vec![
                 "Apply all globally (.claude/settings.json)",
                 "Apply all locally (.claude/settings.local.json)",
-                "Choose individually per selected category"
+                "Choose individually per selected category",
             ];
             let choice = Select::new("Choose configuration scope:", scopes)
                 .prompt()
@@ -134,12 +238,12 @@ fn runJsonOptimizationFlow() -> crate::Result<()> {
     for sec in sectionsArray {
         let title = sec["section"].as_str().unwrap_or("");
         let singleLineTitle = title.split('\n').next().unwrap_or(title);
-        
+
         if selected.contains(&singleLineTitle.to_string()) {
             let targetScope = if scopeChoice == "custom" {
                 let options = vec![
                     "Global (.claude/settings.json)",
-                    "Local (.claude/settings.local.json)"
+                    "Local (.claude/settings.local.json)",
                 ];
                 let promptMsg = format!("Scope for '{}':", singleLineTitle);
                 let choice = Select::new(&promptMsg, options)
@@ -160,13 +264,18 @@ fn runJsonOptimizationFlow() -> crate::Result<()> {
                 PathBuf::from(".claude/settings.local.json")
             };
 
-            display::step(&format!("Applying '{}' settings to {}", singleLineTitle, targetPath.display()));
+            display::step(&format!(
+                "Applying '{}' settings to {}",
+                singleLineTitle,
+                targetPath.display()
+            ));
 
             if let Some(vars) = sec["vars"].as_array() {
                 for var in vars {
                     let key = var["key"].as_str().unwrap_or("");
                     let defaultValue = var["value"].as_str().unwrap_or("");
-                    let activeValue = std::env::var(key).unwrap_or_else(|_| defaultValue.to_string());
+                    let activeValue =
+                        std::env::var(key).unwrap_or_else(|_| defaultValue.to_string());
 
                     if let Some(mapping) = ENV_MAPPINGS.iter().find(|m| m.envKey == key) {
                         applyMappingToFile(&targetPath, mapping, &activeValue)?;
@@ -180,7 +289,11 @@ fn runJsonOptimizationFlow() -> crate::Result<()> {
     Ok(())
 }
 
-fn applyMappingToFile(targetPath: &PathBuf, mapping: &EnvMapping, value: &str) -> crate::Result<()> {
+fn applyMappingToFile(
+    targetPath: &PathBuf,
+    mapping: &EnvMapping,
+    value: &str,
+) -> crate::Result<()> {
     if let Some(parent) = targetPath.parent() {
         fs::create_dir_all(parent)?;
     }
@@ -194,7 +307,7 @@ fn applyMappingToFile(targetPath: &PathBuf, mapping: &EnvMapping, value: &str) -
 
     let parts: Vec<&str> = mapping.jsonPath.split('.').collect();
     let mut current = &mut config;
-    
+
     for (i, part) in parts.iter().enumerate() {
         if i == parts.len() - 1 {
             match mapping.valType {
@@ -228,20 +341,29 @@ fn applyMappingToFile(targetPath: &PathBuf, mapping: &EnvMapping, value: &str) -
 }
 
 fn optimizeIgnoreFile() -> crate::Result<()> {
-    let ignorePath = PathBuf::from(".claudeignore");
+    optimizeIgnoreFileAtPath(&PathBuf::from(".claudeignore"))
+}
+
+fn optimizeIgnoreFileAtPath(ignorePath: &std::path::Path) -> crate::Result<()> {
     let embeddedIgnore = include_str!("../json/claudeignore_defaults.json");
     let recommendedLines: Vec<String> = serde_json::from_str(embeddedIgnore).unwrap_or_default();
 
     if !ignorePath.exists() {
-        display::step("Creating .claudeignore with recommended patterns...");
+        display::step(&format!(
+            "Creating {} with recommended patterns...",
+            ignorePath.display()
+        ));
         let content = recommendedLines.join("\n") + "\n";
-        fs::write(&ignorePath, content)?;
-        display::success("Successfully created .claudeignore.");
+        fs::write(ignorePath, content)?;
+        display::success(&format!("Successfully created {}.", ignorePath.display()));
         return Ok(());
     }
 
-    let existingContent = fs::read_to_string(&ignorePath)?;
-    let existingLines: Vec<String> = existingContent.lines().map(|s| s.trim().to_string()).collect();
+    let existingContent = fs::read_to_string(ignorePath)?;
+    let existingLines: Vec<String> = existingContent
+        .lines()
+        .map(|s| s.trim().to_string())
+        .collect();
 
     let mut addedPatterns = Vec::new();
     for line in recommendedLines {
@@ -255,9 +377,15 @@ fn optimizeIgnoreFile() -> crate::Result<()> {
     }
 
     if addedPatterns.is_empty() {
-        display::info(".claudeignore already contains all recommended ignore patterns.");
+        display::info(&format!(
+            "{} already contains all recommended ignore patterns.",
+            ignorePath.display()
+        ));
     } else {
-        display::step("Updating .claudeignore with missing patterns...");
+        display::step(&format!(
+            "Updating {} with missing patterns...",
+            ignorePath.display()
+        ));
         let mut fileContent = existingContent;
         if !fileContent.ends_with('\n') && !fileContent.is_empty() {
             fileContent.push('\n');
@@ -266,11 +394,15 @@ fn optimizeIgnoreFile() -> crate::Result<()> {
         for pattern in &addedPatterns {
             fileContent.push_str(pattern);
             fileContent.push('\n');
-            display::success(&format!("Added pattern to .claudeignore: {}", pattern));
+            display::success(&format!(
+                "Added pattern to {}: {}",
+                ignorePath.display(),
+                pattern
+            ));
         }
 
-        fs::write(&ignorePath, fileContent)?;
-        display::success("Successfully updated .claudeignore.");
+        fs::write(ignorePath, fileContent)?;
+        display::success(&format!("Successfully updated {}.", ignorePath.display()));
     }
 
     Ok(())
@@ -278,7 +410,7 @@ fn optimizeIgnoreFile() -> crate::Result<()> {
 
 fn setupThirdPartyToolsFlow() -> crate::Result<()> {
     display::step("Third-Party Optimization Tools Setup");
-    
+
     let options = vec![
         "RTK (Rust Token Kill)",
         "Caveman (Plugin)",
@@ -291,38 +423,38 @@ fn setupThirdPartyToolsFlow() -> crate::Result<()> {
         .prompt()
         .map_err(|e| crate::Error::other(e.to_string()))?;
 
-    // Create bin directory for local tools
-    let _ = fs::create_dir_all(".claude/bin");
-
     let mut installed_tools = Vec::new();
+
+    let home = std::env::var("HOME").unwrap_or_default();
+    let local_bin = if home.is_empty() {
+        "/usr/local/bin".to_string()
+    } else {
+        format!("{}/.local/bin", home)
+    };
 
     for tool in selected {
         match tool {
             "RTK (Rust Token Kill)" => {
-                display::step("Installing RTK ...");
+                display::step("Installing RTK globally...");
+                let _ = fs::create_dir_all(&local_bin);
                 let status = Command::new("sh")
-                    .env("RTK_INSTALL_DIR", ".claude/bin")
+                    .env("RTK_INSTALL_DIR", &local_bin)
                     .args(["-c", "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"])
                     .status()?;
                 if status.success() {
-                    display::success("RTK installed successfully in .claude/bin");
+                    display::success(&format!("RTK installed successfully in {}", local_bin));
                     installed_tools.push("rtk");
                 } else {
                     display::error("Failed to install RTK");
                 }
             }
-            "Caveman" => {
-                display::step("Installing Caveman ...");
+            "Caveman (Plugin)" => {
+                display::step("Installing Caveman globally...");
                 let status = Command::new("bash")
                     .args(["-c", "curl -fsSL https://raw.githubusercontent.com/JuliusBrussee/caveman/main/install.sh | bash"])
                     .status()?;
                 if status.success() {
-                    // Try to move it to .claude/bin
-                    if let Ok(home) = std::env::var("HOME") {
-                        let installed_path = format!("{}/.local/bin/caveman", home);
-                        let _ = fs::rename(installed_path, ".claude/bin/caveman");
-                    }
-                    display::success("Caveman installed successfully in .claude/bin");
+                    display::success("Caveman installed successfully globally");
                     installed_tools.push("caveman");
                 } else {
                     display::error("Failed to install Caveman");
@@ -334,18 +466,37 @@ fn setupThirdPartyToolsFlow() -> crate::Result<()> {
                 installed_tools.push("token_optimizer");
             }
             "Code Review Graph" | "Graphify" => {
-                display::step(&format!("Installing {} locally via venv...", tool));
-                if !PathBuf::from(".claude/venv").exists() {
-                    let _ = Command::new("python3").args(["-m", "venv", ".claude/venv"]).status();
+                display::step(&format!("Installing {} globally...", tool));
+                let pkg = if tool == "Code Review Graph" {
+                    "code-review-graph"
+                } else {
+                    "graphifyy"
+                };
+
+                let mut status = Command::new("pip3")
+                    .args(["install", "--user", pkg])
+                    .status();
+
+                if status.is_err() || !status.as_ref().unwrap().success() {
+                    status = Command::new("pip")
+                        .args(["install", "--user", pkg])
+                        .status();
                 }
-                
-                let pkg = if tool == "Code Review Graph" { "code-review-graph" } else { "graphifyy" };
-                let pip_path = if cfg!(windows) { ".claude\\venv\\Scripts\\pip" } else { ".claude/venv/bin/pip" };
-                
-                let status = Command::new(pip_path).args(["install", pkg]).status()?;
-                
-                if status.success() {
-                    display::success(&format!("{} installed successfully in .claude/venv", tool));
+
+                if let Ok(ref s) = status {
+                    if !s.success() {
+                        let _ = Command::new("pip3")
+                            .args(["install", "--user", "--break-system-packages", pkg])
+                            .status();
+                        status = Command::new("pip")
+                            .args(["install", "--user", "--break-system-packages", pkg])
+                            .status();
+                    }
+                }
+
+                let success = status.map(|s| s.success()).unwrap_or(false);
+                if success {
+                    display::success(&format!("{} installed successfully globally", tool));
                     if tool == "Code Review Graph" {
                         installed_tools.push("code_review_graph");
                     } else {
@@ -363,7 +514,8 @@ fn setupThirdPartyToolsFlow() -> crate::Result<()> {
         display::divider();
         display::step("Recommended Manual Setup Steps:");
 
-        let tutorials_val: Value = serde_json::from_str(include_str!("../json/tutorials.json")).unwrap_or_else(|_| json!({}));
+        let tutorials_val: Value = serde_json::from_str(include_str!("../json/tutorials.json"))
+            .unwrap_or_else(|_| json!({}));
         for key in installed_tools {
             if let Some(tut) = tutorials_val.get(key) {
                 if let Some(title) = tut["title"].as_str() {
@@ -379,6 +531,85 @@ fn setupThirdPartyToolsFlow() -> crate::Result<()> {
             }
         }
     }
-    
+
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_apply_mapping_to_file_string() {
+        let test_dir = PathBuf::from("tmp/test_apply_mapping_string");
+        let _ = fs::create_dir_all(&test_dir);
+        let test_file = test_dir.join("settings.json");
+        if test_file.exists() {
+            let _ = fs::remove_file(&test_file);
+        }
+
+        let mapping = EnvMapping {
+            envKey: "LOMA_CLAUDE_MODEL",
+            jsonPath: "model",
+            valType: "string",
+        };
+
+        applyMappingToFile(&test_file, &mapping, "claude-sonnet-4-5").unwrap();
+
+        let content = fs::read_to_string(&test_file).unwrap();
+        let json: serde_json::Value = serde_json::from_str(&content).unwrap();
+        assert_eq!(json["model"], "claude-sonnet-4-5");
+
+        let _ = fs::remove_dir_all(&test_dir);
+    }
+
+    #[test]
+    fn test_apply_mapping_to_file_boolean_and_nested() {
+        let test_dir = PathBuf::from("tmp/test_apply_mapping_bool");
+        let _ = fs::create_dir_all(&test_dir);
+        let test_file = test_dir.join("settings.json");
+        if test_file.exists() {
+            let _ = fs::remove_file(&test_file);
+        }
+
+        let mapping = EnvMapping {
+            envKey: "LOMA_CLAUDE_AUTO_COMPACT",
+            jsonPath: "cache.COMPACT_ON_DEMAND",
+            valType: "boolean",
+        };
+
+        applyMappingToFile(&test_file, &mapping, "true").unwrap();
+
+        let content = fs::read_to_string(&test_file).unwrap();
+        let json: serde_json::Value = serde_json::from_str(&content).unwrap();
+        assert_eq!(json["cache"]["COMPACT_ON_DEMAND"], true);
+
+        let _ = fs::remove_dir_all(&test_dir);
+    }
+
+    #[test]
+    fn test_optimize_ignore_file_at_path() {
+        let test_dir = PathBuf::from("tmp/test_optimize_ignore");
+        let _ = fs::create_dir_all(&test_dir);
+        let test_file = test_dir.join(".claudeignore");
+        if test_file.exists() {
+            let _ = fs::remove_file(&test_file);
+        }
+
+        // Test creation
+        optimizeIgnoreFileAtPath(&test_file).unwrap();
+        assert!(test_file.exists());
+        let content = fs::read_to_string(&test_file).unwrap();
+        assert!(content.contains(".git"));
+
+        // Test update/merge
+        let custom_content = ".git\n# custom comment\n/node_modules/\n";
+        fs::write(&test_file, custom_content).unwrap();
+        optimizeIgnoreFileAtPath(&test_file).unwrap();
+        let updated_content = fs::read_to_string(&test_file).unwrap();
+        assert!(updated_content.contains("# custom comment"));
+        assert!(updated_content.contains(".git"));
+
+        let _ = fs::remove_dir_all(&test_dir);
+    }
 }

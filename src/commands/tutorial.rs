@@ -8,7 +8,9 @@ pub fn runTutorial(tool: Option<&str>) -> crate::Result<()> {
     let tutorialsVal = loadTutorialsJson();
     let Some(tutsMap) = tutorialsVal.as_object() else {
         display::error("Failed to load tutorials configuration.");
-        return Err(crate::Error::other("Failed to load tutorials configuration"));
+        return Err(crate::Error::other(
+            "Failed to load tutorials configuration",
+        ));
     };
 
     if let Some(toolName) = tool {
@@ -21,7 +23,7 @@ pub fn runTutorial(tool: Option<&str>) -> crate::Result<()> {
                 return Ok(());
             }
         }
-        
+
         display::warn(&format!("No tutorial found for tool: {}", toolName));
         display::info("Available tools:");
     }
@@ -107,4 +109,19 @@ fn loadTutorialsJson() -> Value {
     }
     let embedded = include_str!("../json/tutorials.json");
     serde_json::from_str(embedded).unwrap_or(Value::Null)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_load_tutorials_json() {
+        let val = loadTutorialsJson();
+        assert!(!val.is_null());
+        let obj = val.as_object().unwrap();
+        assert!(obj.contains_key("rtk"));
+        assert!(obj.contains_key("caveman"));
+        assert!(obj.contains_key("token_optimizer"));
+    }
 }
