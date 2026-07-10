@@ -13,7 +13,9 @@ pub fn runDoctor() -> crate::Result<()> {
     if lomaFs::requireNpm().is_ok() {
         display::success("Node.js >= 18 and npm are present and healthy.");
     } else {
-        display::warn("Node.js or npm validation failed. Node.js-based integrations might not work.");
+        display::warn(
+            "Node.js or npm validation failed. Node.js-based integrations might not work.",
+        );
         healthy = false;
     }
 
@@ -22,9 +24,7 @@ pub fn runDoctor() -> crate::Result<()> {
     if lomaFs::cmdExists("curl") {
         display::success("curl is available.");
     } else {
-        display::warn(
-            "curl is missing. Installation scripts requiring curl will fail.",
-        );
+        display::warn("curl is missing. Installation scripts requiring curl will fail.");
     }
 
     // 3. Check powershell on Windows
@@ -50,7 +50,7 @@ pub fn runDoctor() -> crate::Result<()> {
     display::step("Checking .loma directory write permissions...");
     let lomaDir = lomaFs::getLomaDir();
     let testFile = lomaDir.join(".health_write_test");
-    
+
     // Ensure the parent exists
     let _ = fs::create_dir_all(&lomaDir);
 
@@ -105,7 +105,9 @@ pub fn runDoctor() -> crate::Result<()> {
     if healthy {
         display::success("Environment is healthy for running Loma CLI!");
     } else {
-        display::warn("Some global issues or missing dependencies were detected. Check details above.");
+        display::warn(
+            "Some global issues or missing dependencies were detected. Check details above.",
+        );
     }
 
     Ok(())

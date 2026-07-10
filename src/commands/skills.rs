@@ -1,8 +1,8 @@
 use crate::utils::display;
 use crate::utils::fs as lomaFs;
-use std::fs;
 use inquire::MultiSelect;
 use serde_json::Value;
+use std::fs;
 
 pub fn runSkills(assistant: &str) -> crate::Result<()> {
     display::title(&format!("Manage Skills for {}", assistant));
@@ -22,7 +22,8 @@ pub fn runSkills(assistant: &str) -> crate::Result<()> {
     fs::create_dir_all(&skills_dir)?;
 
     // Load skills from JSON
-    let skills_val: Value = serde_json::from_str(include_str!("../json/skills.json")).unwrap_or_else(|_| serde_json::json!({}));
+    let skills_val: Value = serde_json::from_str(include_str!("../json/skills.json"))
+        .unwrap_or_else(|_| serde_json::json!({}));
     let Some(skills_obj) = skills_val.as_object() else {
         return Err(crate::Error::other("Failed to load skills database."));
     };
@@ -53,7 +54,10 @@ pub fn runSkills(assistant: &str) -> crate::Result<()> {
     }
 
     // Interactive prompt
-    let multi_select_prompt = MultiSelect::new("Select skills to enable/inject in this project:", options.clone());
+    let multi_select_prompt = MultiSelect::new(
+        "Select skills to enable/inject in this project:",
+        options.clone(),
+    );
     let prompt_with_defaults = if !default_selections.is_empty() {
         multi_select_prompt.with_default(&default_selections)
     } else {
@@ -66,16 +70,19 @@ pub fn runSkills(assistant: &str) -> crate::Result<()> {
         .map_err(|e| crate::Error::other(e.to_string()))?;
 
     // Map selected choices back to their keys
-    let selected_keys: Vec<String> = selected_choices.iter().map(|choice| {
-        let idx = options.iter().position(|opt| opt == choice).unwrap();
-        keys[idx].clone()
-    }).collect();
+    let selected_keys: Vec<String> = selected_choices
+        .iter()
+        .map(|choice| {
+            let idx = options.iter().position(|opt| opt == choice).unwrap();
+            keys[idx].clone()
+        })
+        .collect();
 
     // Enable/disable skills accordingly
     for key in &keys {
         let skill_file_name = format!("{}.md", key);
         let skill_path = skills_dir.join(&skill_file_name);
-        
+
         if selected_keys.contains(key) {
             let content = skills_obj[key]["content"].as_str().unwrap_or("");
             fs::write(&skill_path, content)?;

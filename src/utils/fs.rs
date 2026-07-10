@@ -4,11 +4,8 @@ use std::path::PathBuf;
 use std::process::Command;
 
 pub use crate::utils::r#const::{
-    CLAUDE_BINARY_PATHS, CLAUDE_CONFIG_DIRS, CLAUDE_DATA_DIRS,
-    CLAUDE_DNF_REPO_FILES,
+    CLAUDE_BINARY_PATHS, CLAUDE_CONFIG_DIRS, CLAUDE_DATA_DIRS, CLAUDE_DNF_REPO_FILES,
 };
-
-
 
 /// Get the project-local .loma directory path.
 pub fn getLomaDir() -> PathBuf {
@@ -42,7 +39,6 @@ pub fn getArchivesDir() -> PathBuf {
 pub fn getLogFile() -> PathBuf {
     getLomaDir().join("logs").join("loma.log")
 }
-
 
 /// A robust, platform-agnostic home directory resolver.
 pub fn get_home_dir() -> Option<PathBuf> {
@@ -326,11 +322,15 @@ pub fn cleanShellConfigs() -> crate::Result<()> {
     Ok(())
 }
 
-pub fn createZip(baseDir: &std::path::Path, relativePaths: &[String], dstZip: &std::path::Path) -> crate::Result<()> {
+pub fn createZip(
+    baseDir: &std::path::Path,
+    relativePaths: &[String],
+    dstZip: &std::path::Path,
+) -> crate::Result<()> {
     let file = std::fs::File::create(dstZip)?;
     let mut zip = zip::ZipWriter::new(file);
-    let options = zip::write::SimpleFileOptions::default()
-        .compression_method(zip::CompressionMethod::Stored);
+    let options =
+        zip::write::SimpleFileOptions::default().compression_method(zip::CompressionMethod::Stored);
 
     for relPathStr in relativePaths {
         let fullPath = baseDir.join(relPathStr);
@@ -355,10 +355,11 @@ fn addFileToZip<W: std::io::Write + std::io::Seek>(
     options: zip::write::SimpleFileOptions,
 ) -> crate::Result<()> {
     use std::io::{Read, Write};
-    let relPath = filePath.strip_prefix(baseDir)
+    let relPath = filePath
+        .strip_prefix(baseDir)
         .map_err(|e| crate::Error::other(e.to_string()))?;
     let pathStr = relPath.to_string_lossy().replace('\\', "/");
-    
+
     zip.start_file(pathStr, options)?;
     let mut f = std::fs::File::open(filePath)?;
     let mut buffer = Vec::new();
@@ -373,7 +374,8 @@ fn addDirToZip<W: std::io::Write + std::io::Seek>(
     dirPath: &std::path::Path,
     options: zip::write::SimpleFileOptions,
 ) -> crate::Result<()> {
-    let relPath = dirPath.strip_prefix(baseDir)
+    let relPath = dirPath
+        .strip_prefix(baseDir)
         .map_err(|e| crate::Error::other(e.to_string()))?;
     let mut pathStr = relPath.to_string_lossy().replace('\\', "/");
     if !pathStr.ends_with('/') {

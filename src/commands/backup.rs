@@ -18,7 +18,7 @@ pub fn runBackup(assistant: &str) -> crate::Result<()> {
     }
 
     display::step("Select backup type");
-    
+
     let choice = if assistant.to_lowercase() == "claude" {
         let options = vec![
             "JSON config only — settings.json & settings.local.json (no auth tokens)",
@@ -81,12 +81,16 @@ pub fn runBackup(assistant: &str) -> crate::Result<()> {
         } else {
             format!(".loma/{}/", assistant)
         };
-        display::step(&format!("Backing up JSON config files from {}", display_src));
-        
+        display::step(&format!(
+            "Backing up JSON config files from {}",
+            display_src
+        ));
+
         let settingsFile = assistantDir.join("settings.json");
         let settingsLocalFile = assistantDir.join("settings.local.json");
         let mut relativeFiles = Vec::new();
-        let dir_name_os = assistantDir.file_name()
+        let dir_name_os = assistantDir
+            .file_name()
             .ok_or_else(|| crate::Error::other("Invalid assistant directory path"))?;
         let dir_name = dir_name_os.to_string_lossy();
         if settingsFile.exists() {
@@ -102,7 +106,10 @@ pub fn runBackup(assistant: &str) -> crate::Result<()> {
         }
 
         lomaFs::createZip(&baseDir, &relativeFiles, &archivePath)?;
-        display::success(&format!("JSON config backup created: {}", archivePath.display()));
+        display::success(&format!(
+            "JSON config backup created: {}",
+            archivePath.display()
+        ));
     } else {
         display::step("Full backup");
         let mut relativeArgs = Vec::new();
@@ -123,7 +130,10 @@ pub fn runBackup(assistant: &str) -> crate::Result<()> {
         }
 
         let display_root = if is_claude { "workspace root" } else { ".loma" };
-        display::info(&format!("Items included in backup (relative to {}):", display_root));
+        display::info(&format!(
+            "Items included in backup (relative to {}):",
+            display_root
+        ));
         for item in &relativeArgs {
             println!("    {}", item);
         }

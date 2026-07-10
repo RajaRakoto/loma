@@ -46,7 +46,10 @@ pub fn runSync(assistant: &str) -> crate::Result<()> {
         HashMap::new()
     };
 
-    display::info(&format!("Registry loaded with {} tracked files.", registry.len()));
+    display::info(&format!(
+        "Registry loaded with {} tracked files.",
+        registry.len()
+    ));
 
     display::step("Analyzing .claude directory structure...");
     let subdirs = ["rules", "agents", "skills", "commands"];
@@ -65,7 +68,10 @@ pub fn runSync(assistant: &str) -> crate::Result<()> {
         }
     }
 
-    display::info(&format!("Found {} markdown configuration files on disk.", existing_files.len()));
+    display::info(&format!(
+        "Found {} markdown configuration files on disk.",
+        existing_files.len()
+    ));
 
     // 1. Detect Inconsistencies & Duplicates
     let mut missing_tracked = Vec::new();
@@ -96,7 +102,10 @@ pub fn runSync(assistant: &str) -> crate::Result<()> {
 
     // 2. Report Inconsistencies
     if !missing_tracked.is_empty() {
-        display::warn(&format!("Detected {} missing tracked files:", missing_tracked.len()));
+        display::warn(&format!(
+            "Detected {} missing tracked files:",
+            missing_tracked.len()
+        ));
         for key in &missing_tracked {
             if let Some(entry) = registry.get(key) {
                 println!("  • {} -> {}", key, entry.target);
@@ -105,7 +114,10 @@ pub fn runSync(assistant: &str) -> crate::Result<()> {
     }
 
     if !untracked_files.is_empty() {
-        display::info(&format!("Detected {} untracked native configurations:", untracked_files.len()));
+        display::info(&format!(
+            "Detected {} untracked native configurations:",
+            untracked_files.len()
+        ));
         for file in &untracked_files {
             println!("  • {}", file.display());
         }
@@ -159,11 +171,14 @@ Load rules, agents, skills and commands from `.claude/`.
     // 5. Repair / Sync Registry
     if !missing_tracked.is_empty() || !untracked_files.is_empty() {
         display::step("Repairing registry mapping...");
-        
+
         // Remove missing entries
         for key in &missing_tracked {
             registry.remove(key);
-            display::success(&format!("Removed missing tracked entry from registry: {}", key));
+            display::success(&format!(
+                "Removed missing tracked entry from registry: {}",
+                key
+            ));
         }
 
         // Try to add untracked entries dynamically
@@ -177,8 +192,12 @@ Load rules, agents, skills and commands from `.claude/`.
                 .replace("_COMMANDS.md", "")
                 .replace('_', "-")
                 .to_lowercase();
-            
-            let parent_dir = file.parent().and_then(|p| p.file_name()).unwrap_or_default().to_string_lossy();
+
+            let parent_dir = file
+                .parent()
+                .and_then(|p| p.file_name())
+                .unwrap_or_default()
+                .to_string_lossy();
             let entry_type = parent_dir.to_string();
 
             if let Ok(content) = fs::read_to_string(file) {
@@ -192,7 +211,11 @@ Load rules, agents, skills and commands from `.claude/`.
                     strategy: "sync".to_string(),
                 };
                 registry.insert(clean_key.clone(), new_entry);
-                display::success(&format!("Registered untracked configuration: {} -> {}", clean_key, file.display()));
+                display::success(&format!(
+                    "Registered untracked configuration: {} -> {}",
+                    clean_key,
+                    file.display()
+                ));
             }
         }
 

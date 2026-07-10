@@ -8,7 +8,10 @@ pub fn runRestore(assistant: &str) -> crate::Result<()> {
     display::title(&format!("Restore {} Backup", assistant));
 
     let archivesDir = lomaFs::getArchivesDir();
-    display::step(&format!("Searching for backup archives in {}...", archivesDir.display()));
+    display::step(&format!(
+        "Searching for backup archives in {}...",
+        archivesDir.display()
+    ));
 
     if !archivesDir.exists() {
         display::error("No archives directory found. Please create a backup first.");
@@ -36,7 +39,10 @@ pub fn runRestore(assistant: &str) -> crate::Result<()> {
             "No backup archives found in: {}",
             archivesDir.to_string_lossy()
         ));
-        display::info(&format!("Create a backup first with: loma backup {}", assistant));
+        display::info(&format!(
+            "Create a backup first with: loma backup {}",
+            assistant
+        ));
         return Err(crate::Error::other("No backup archives found"));
     }
 
@@ -97,7 +103,7 @@ pub fn runRestore(assistant: &str) -> crate::Result<()> {
     display::step("Archive contents");
     let file = fs::File::open(selectedArchive)?;
     let mut archive = zip::ZipArchive::new(file)?;
-    
+
     let mut count = 0;
     for i in 0..archive.len() {
         if count >= 30 {
@@ -111,7 +117,10 @@ pub fn runRestore(assistant: &str) -> crate::Result<()> {
     }
     println!();
 
-    display::warn(&format!("Restore will overwrite existing {} files.", assistant));
+    display::warn(&format!(
+        "Restore will overwrite existing {} files.",
+        assistant
+    ));
     if !display::confirm(&format!("Confirm restore from {}?", archiveName)) {
         display::info("Restore cancelled.");
         return Ok(());
@@ -152,7 +161,10 @@ pub fn runRestore(assistant: &str) -> crate::Result<()> {
 
         if !relativePreArgs.is_empty() {
             lomaFs::createZip(&baseDir, &relativePreArgs, &preBackupPath)?;
-            display::success(&format!("Safety backup created: {}", preBackupPath.display()));
+            display::success(&format!(
+                "Safety backup created: {}",
+                preBackupPath.display()
+            ));
         }
     }
 
@@ -160,7 +172,10 @@ pub fn runRestore(assistant: &str) -> crate::Result<()> {
     lomaFs::extractZip(selectedArchive, &baseDir)?;
 
     display::success("Restore completed successfully.");
-    display::info(&format!("Restart {} to apply the restored settings.", assistant));
+    display::info(&format!(
+        "Restart {} to apply the restored settings.",
+        assistant
+    ));
 
     Ok(())
 }

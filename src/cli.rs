@@ -8,7 +8,13 @@
 use clap::{Parser, Subcommand};
 
 #[derive(Parser, Debug)]
-#[command(name = "loma", version, author, about = "", disable_version_flag = true)]
+#[command(
+    name = "loma",
+    version,
+    author,
+    about = "",
+    disable_version_flag = true
+)]
 pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Commands>,
@@ -22,7 +28,6 @@ pub struct Cli {
 #[derive(Subcommand, Debug)]
 pub enum Commands {
     // ── General / Metadata ──
-
     /// Print application information.
     #[command(hide = true)]
     Info {
@@ -32,7 +37,6 @@ pub enum Commands {
     },
 
     // ── Setup & Initialization ──
-
     /// Initialize configuration files for loma.
     Init {
         /// The assistant to target.
@@ -58,7 +62,6 @@ pub enum Commands {
     },
 
     // ── Management & Optimization ──
-
     /// Update an AI assistant.
     Update {
         /// The assistant to target.
@@ -84,7 +87,6 @@ pub enum Commands {
     },
 
     // ── Maintenance & Health ──
-
     /// Show current status of an AI assistant (beta).
     Status {
         /// The assistant to target.
@@ -113,7 +115,6 @@ pub enum Commands {
     },
 
     // ── Dedicated Utilities ──
-
     /// View manual setup instructions for third-party tools.
     #[command(alias = "tutorialc")]
     Tutorial {
@@ -131,7 +132,6 @@ pub enum Commands {
     },
 
     // ── Future / Dev Usage (Hidden) ──
-
     /// Run the application (add your business logic here).
     #[command(hide = true)]
     Run {
@@ -159,7 +159,10 @@ mod tests {
     #[test]
     fn parse_info_verbose() {
         let cli = Cli::try_parse_from(["loma", "info", "--verbose"]).unwrap();
-        assert!(matches!(cli.command, Some(Commands::Info { verbose: true })));
+        assert!(matches!(
+            cli.command,
+            Some(Commands::Info { verbose: true })
+        ));
     }
 
     #[test]

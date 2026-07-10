@@ -1,9 +1,9 @@
 use inquire::error::InquireError;
-use inquire::{MultiSelect, Select, Confirm};
+use inquire::{Confirm, MultiSelect, Select};
 use serde_json::Value;
+use std::collections::HashMap;
 use std::fs;
 use std::path::PathBuf;
-use std::collections::HashMap;
 
 #[derive(Clone)]
 #[allow(dead_code)]
@@ -282,8 +282,11 @@ pub fn get_file_name(id: &str, category: &str) -> String {
     let last_part = parts.last().unwrap_or(&id);
     let base_name = last_part.replace('-', "_").to_uppercase();
     let suffix = category.to_uppercase();
-    
-    if base_name == suffix || base_name.ends_with(&format!("_{}", suffix)) || base_name.ends_with(&suffix) {
+
+    if base_name == suffix
+        || base_name.ends_with(&format!("_{}", suffix))
+        || base_name.ends_with(&suffix)
+    {
         format!("{}.md", base_name)
     } else {
         format!("{}_{}.md", base_name, suffix)
@@ -336,9 +339,9 @@ fn merge_markdown(existing: &str, new_content: &str) -> String {
     let new_sections = split_markdown(new_content);
 
     for new_sec in new_sections {
-        let match_idx = existing_sections.iter().position(|sec| {
-            sec.header_text.to_lowercase() == new_sec.header_text.to_lowercase()
-        });
+        let match_idx = existing_sections
+            .iter()
+            .position(|sec| sec.header_text.to_lowercase() == new_sec.header_text.to_lowercase());
 
         if let Some(idx) = match_idx {
             let mut newLinesToAdd = Vec::new();
@@ -347,18 +350,23 @@ fn merge_markdown(existing: &str, new_content: &str) -> String {
                 if trimmed.is_empty() {
                     continue;
                 }
-                
+
                 let isDup = existing_sections[idx].content.iter().any(|existingLine| {
                     let cleanExisting = existingLine.trim();
-                    if (trimmed.starts_with('*') || trimmed.starts_with('-')) && (cleanExisting.starts_with('*') || cleanExisting.starts_with('-')) {
-                        let cleanNewItem = trimmed.trim_start_matches(['*', '-', ' ']).to_lowercase();
-                        let cleanExistItem = cleanExisting.trim_start_matches(['*', '-', ' ']).to_lowercase();
+                    if (trimmed.starts_with('*') || trimmed.starts_with('-'))
+                        && (cleanExisting.starts_with('*') || cleanExisting.starts_with('-'))
+                    {
+                        let cleanNewItem =
+                            trimmed.trim_start_matches(['*', '-', ' ']).to_lowercase();
+                        let cleanExistItem = cleanExisting
+                            .trim_start_matches(['*', '-', ' '])
+                            .to_lowercase();
                         cleanNewItem == cleanExistItem
                     } else {
                         cleanExisting.to_lowercase() == trimmed.to_lowercase()
                     }
                 });
-                
+
                 if !isDup {
                     newLinesToAdd.push(line.clone());
                 }
@@ -373,12 +381,14 @@ fn merge_markdown(existing: &str, new_content: &str) -> String {
                         break;
                     }
                 }
-                
+
                 // Add separator
                 existing_sections[idx].content.push(String::new());
-                existing_sections[idx].content.push("<!-- === FUSION SEPARATOR === -->".to_string());
+                existing_sections[idx]
+                    .content
+                    .push("<!-- === FUSION SEPARATOR === -->".to_string());
                 existing_sections[idx].content.push(String::new());
-                
+
                 // Add new lines
                 for line in newLinesToAdd {
                     existing_sections[idx].content.push(line);
@@ -422,14 +432,7 @@ pub fn promptAndGenerateClaude() -> crate::Result<()> {
     }
 
     crate::utils::display::step("Step 1: Choose parent-section");
-    let parent_sections = vec![
-        "dev",
-        "git",
-        "rtk",
-        "taskmaster",
-        "context7",
-        "pocketbase",
-    ];
+    let parent_sections = vec!["dev", "git", "rtk", "taskmaster", "context7", "pocketbase"];
     let parent = Select::new("Choose parent-section:", parent_sections)
         .prompt()
         .map_err(|e| crate::Error::other(e.to_string()))?;
@@ -459,13 +462,21 @@ pub fn promptAndGenerateClaude() -> crate::Result<()> {
     }
 
     crate::utils::display::step("Step 3: Choose Claude destination");
-    
-    let default_dest = jsonRoot[&parent_key]["default-target"].as_str().unwrap_or("rules");
+
+    let default_dest = jsonRoot[&parent_key]["default-target"]
+        .as_str()
+        .unwrap_or("rules");
 
     let destinations = vec!["rules", "agents", "skills", "commands", "CLAUDE.md"];
-    let starting_cursor = destinations.iter().position(|&d| d == default_dest).unwrap_or(0);
+    let starting_cursor = destinations
+        .iter()
+        .position(|&d| d == default_dest)
+        .unwrap_or(0);
 
-    let prompt_msg = format!("Choose Claude destination (recommended default is '{}'):", default_dest);
+    let prompt_msg = format!(
+        "Choose Claude destination (recommended default is '{}'):",
+        default_dest
+    );
     let destination = Select::new(&prompt_msg, destinations)
         .with_starting_cursor(starting_cursor)
         .prompt()
@@ -492,14 +503,17 @@ pub fn promptAndGenerateClaude() -> crate::Result<()> {
     }
 
     let registry_path = PathBuf::from(".loma/registry/injections.json");
-    let mut registry: HashMap<String, crate::commands::sync::RegistryEntry> = if registry_path.exists() {
-        let content = fs::read_to_string(&registry_path)?;
-        serde_json::from_str(&content).unwrap_or_default()
-    } else {
-        HashMap::new()
-    };
+    let mut registry: HashMap<String, crate::commands::sync::RegistryEntry> =
+        if registry_path.exists() {
+            let content = fs::read_to_string(&registry_path)?;
+            serde_json::from_str(&content).unwrap_or_default()
+        } else {
+            HashMap::new()
+        };
 
-    let parent_title = jsonRoot[&parent_key]["parent-title"].as_str().unwrap_or(parent_key);
+    let parent_title = jsonRoot[&parent_key]["parent-title"]
+        .as_str()
+        .unwrap_or(parent_key);
     let mut full_markdown = format!("# {}\n\n", parent_title);
     for opt in &selected {
         let mut currentVal = &jsonRoot;
@@ -574,7 +588,10 @@ pub fn promptAndGenerateClaude() -> crate::Result<()> {
                 "overwrite" => {
                     fs::write(&final_path, &full_markdown)?;
                     strategy = "overwrite".to_string();
-                    crate::utils::display::success(&format!("Overwritten: {}", final_path.display()));
+                    crate::utils::display::success(&format!(
+                        "Overwritten: {}",
+                        final_path.display()
+                    ));
                 }
                 "merge" => {
                     let existing_content = fs::read_to_string(&final_path)?;
@@ -589,13 +606,18 @@ pub fn promptAndGenerateClaude() -> crate::Result<()> {
                     let mut dup_path = final_path.clone();
                     while dup_path.exists() {
                         let new_filename = format!("{}_{}.md", base_stem, counter);
-                        dup_path = PathBuf::from(".claude").join(destination).join(new_filename);
+                        dup_path = PathBuf::from(".claude")
+                            .join(destination)
+                            .join(new_filename);
                         counter += 1;
                     }
                     fs::write(&dup_path, &full_markdown)?;
                     final_path = dup_path;
                     strategy = "duplicate".to_string();
-                    crate::utils::display::success(&format!("Duplicated as: {}", final_path.display()));
+                    crate::utils::display::success(&format!(
+                        "Duplicated as: {}",
+                        final_path.display()
+                    ));
                 }
                 _ => {}
             }
@@ -651,7 +673,10 @@ pub fn promptAndGenerate() -> crate::Result<Option<String>> {
             return Ok(None);
         }
         Err(e) => {
-            return Err(crate::Error::other(format!("Interactive prompt error: {}", e)));
+            return Err(crate::Error::other(format!(
+                "Interactive prompt error: {}",
+                e
+            )));
         }
     };
 
@@ -660,14 +685,7 @@ pub fn promptAndGenerate() -> crate::Result<Option<String>> {
     }
 
     let mut markdown = String::new();
-    let sectionKeys = &[
-        "dev",
-        "git",
-        "rtk",
-        "taskmaster",
-        "context7",
-        "pocketbase",
-    ];
+    let sectionKeys = &["dev", "git", "rtk", "taskmaster", "context7", "pocketbase"];
 
     for secKey in sectionKeys {
         let secOptions: Vec<&CheckboxOption> = selectedList
@@ -751,8 +769,14 @@ mod tests {
 
     #[test]
     fn test_get_file_name() {
-        assert_eq!(get_file_name("dev.think-before-coding", "rules"), "THINK_BEFORE_CODING_RULES.md");
-        assert_eq!(get_file_name("git.commit-rules", "agents"), "COMMIT_RULES_AGENTS.md");
+        assert_eq!(
+            get_file_name("dev.think-before-coding", "rules"),
+            "THINK_BEFORE_CODING_RULES.md"
+        );
+        assert_eq!(
+            get_file_name("git.commit-rules", "agents"),
+            "COMMIT_RULES_AGENTS.md"
+        );
     }
 
     #[test]

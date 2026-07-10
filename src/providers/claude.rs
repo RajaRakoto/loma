@@ -2,10 +2,10 @@
 
 use crate::utils::display;
 use crate::utils::fs as lomaFs;
+use inquire::MultiSelect;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use inquire::MultiSelect;
 
 pub struct ClaudeProvider;
 
@@ -56,7 +56,9 @@ impl ClaudeProvider {
                     .status();
                 match uninstall {
                     Ok(s) if s.success() => display::success("npm package removed."),
-                    _ => display::warn("npm uninstall failed (may not have been installed via npm)."),
+                    _ => {
+                        display::warn("npm uninstall failed (may not have been installed via npm).")
+                    }
                 }
             }
         }
@@ -93,7 +95,7 @@ impl ClaudeProvider {
         } else {
             display::info(&format!("Not found: {}", assistantDir.display()));
         }
-        
+
         // Clean npm cache pattern for anthropic/claude-code locally if npm is present
         if lomaFs::cmdExists("npm") {
             let npmCacheDir = Command::new("npm")
@@ -148,8 +150,12 @@ impl ClaudeProvider {
                 if name.contains(pattern) {
                     let _ = fs::remove_dir_all(&entryPath).or_else(|_| fs::remove_file(&entryPath));
                 } else if entryPath.is_dir() {
-                    let _ =
-                        self.cleanSubdirPatternRecursive(&entryPath, pattern, currentDepth + 1, maxDepth);
+                    let _ = self.cleanSubdirPatternRecursive(
+                        &entryPath,
+                        pattern,
+                        currentDepth + 1,
+                        maxDepth,
+                    );
                 }
             }
         }
@@ -210,7 +216,10 @@ impl super::AssistantProvider for ClaudeProvider {
         let mut staleFound = false;
 
         if assistantDir.exists() {
-            display::warn(&format!("Leftover configuration directory found: {}", assistantDir.display()));
+            display::warn(&format!(
+                "Leftover configuration directory found: {}",
+                assistantDir.display()
+            ));
             staleFound = true;
         }
 
@@ -267,7 +276,9 @@ impl super::AssistantProvider for ClaudeProvider {
                 display::info("Please install curl to run the recommended native installer:");
                 display::info("  sudo dnf install curl  (Fedora/RHEL)");
                 display::info("  sudo apt-get install curl  (Debian/Ubuntu)");
-                return Err(crate::Error::other("Missing dependencies (curl or npm/nodejs)"));
+                return Err(crate::Error::other(
+                    "Missing dependencies (curl or npm/nodejs)",
+                ));
             }
         };
 
@@ -392,8 +403,6 @@ impl super::AssistantProvider for ClaudeProvider {
             }
         }
 
-
-
         if removeCache {
             display::step("Removing cache and temporary files");
             if lomaFs::cmdExists("npm") {
@@ -438,14 +447,15 @@ impl super::AssistantProvider for ClaudeProvider {
 
         if removeConfigs {
             if assistantDir.exists() {
-                display::warn(&format!("Directory still present: {}", assistantDir.display()));
+                display::warn(&format!(
+                    "Directory still present: {}",
+                    assistantDir.display()
+                ));
                 clean = false;
             } else {
                 display::success("Assistant configuration directory: removed.");
             }
         }
-
-
 
         println!();
         if clean {
@@ -462,7 +472,9 @@ impl super::AssistantProvider for ClaudeProvider {
         display::title("Update Claude");
 
         if !lomaFs::claudeIsInstalled() {
-            display::warn("Claude Code is not currently installed. Running clean installation instead.");
+            display::warn(
+                "Claude Code is not currently installed. Running clean installation instead.",
+            );
             return self.install(false);
         }
 
@@ -570,7 +582,11 @@ impl super::AssistantProvider for ClaudeProvider {
         display::step("Configuration & Data Directories");
         if assistantDir.exists() {
             let size = self.getDirSize(&assistantDir).unwrap_or(0);
-            display::success(&format!("{}/ found (Size: {} bytes)", assistantDir.display(), size));
+            display::success(&format!(
+                "{}/ found (Size: {} bytes)",
+                assistantDir.display(),
+                size
+            ));
         } else {
             display::info(&format!("{}/ not found", assistantDir.display()));
         }

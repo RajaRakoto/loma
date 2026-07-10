@@ -1,5 +1,5 @@
-use crate::utils::display;
 use crate::commands::gen_interactive;
+use crate::utils::display;
 use std::fs;
 use std::path::Path;
 
@@ -33,7 +33,10 @@ pub fn runGen(assistant: &str) -> crate::Result<()> {
             return Ok(());
         }
     } else {
-        if !display::confirm(&format!("File '{}' already exists. Overwrite it?", targetName)) {
+        if !display::confirm(&format!(
+            "File '{}' already exists. Overwrite it?",
+            targetName
+        )) {
             println!("\n> **Notice:** Overwrite aborted by user. Existing file preserved.");
             return Ok(());
         }
@@ -45,7 +48,10 @@ pub fn runGen(assistant: &str) -> crate::Result<()> {
                 println!("\n> **Notice:** No elements selected. Nothing to write.");
             } else {
                 fs::write(targetPath, &markdown)?;
-                println!("\n**Success:** Guidelines successfully generated and written to `{}`.", targetName);
+                println!(
+                    "\n**Success:** Guidelines successfully generated and written to `{}`.",
+                    targetName
+                );
             }
         }
         None => {

@@ -20,14 +20,16 @@ pub fn runInit(assistant: &str) -> crate::Result<()> {
     } else {
         display::step("Creating .loma/loma.env configuration file...");
         let embeddedEnv = include_str!("../json/loma_env_defaults.json");
-        let sections: serde_json::Value = serde_json::from_str(embeddedEnv).unwrap_or(serde_json::json!([]));
+        let sections: serde_json::Value =
+            serde_json::from_str(embeddedEnv).unwrap_or(serde_json::json!([]));
         let mut defaultEnvContent = String::new();
         if let Some(arr) = sections.as_array() {
             for sec in arr {
                 if let Some(title) = sec["section"].as_str() {
                     let lines: Vec<&str> = title.split('\n').collect();
                     if lines.len() == 1 {
-                        defaultEnvContent.push_str(&format!("# ── {} ───────────────────────────────\n", title));
+                        defaultEnvContent
+                            .push_str(&format!("# ── {} ───────────────────────────────\n", title));
                     } else {
                         defaultEnvContent.push_str("# ── Configuration Scope ───────────────────────────────────────────\n");
                         for line in lines {
@@ -59,7 +61,7 @@ pub fn runInit(assistant: &str) -> crate::Result<()> {
     if assistant.to_lowercase() == "claude" {
         display::step("Initializing native Claude architecture...");
         let assistantDir = lomaFs::getAssistantDir(assistant);
-        
+
         let subdirs = ["rules", "agents", "skills", "commands"];
         for subdir in &subdirs {
             let path = assistantDir.join(subdir);
@@ -76,7 +78,10 @@ pub fn runInit(assistant: &str) -> crate::Result<()> {
 }
 "#;
             fs::write(&settingsPath, defaultSettings)?;
-            display::success(&format!("Created default settings file: {}", settingsPath.display()));
+            display::success(&format!(
+                "Created default settings file: {}",
+                settingsPath.display()
+            ));
         }
 
         let claudeMdPath = std::path::Path::new("CLAUDE.md");
@@ -89,15 +94,24 @@ Main context loaded by the assistant at the start of each session.
             display::success("Created bootstrap CLAUDE.md");
         }
     } else {
-        display::step(&format!("Initializing {} configuration directory...", assistant));
+        display::step(&format!(
+            "Initializing {} configuration directory...",
+            assistant
+        ));
         let assistantDir = lomaFs::getAssistantDir(assistant);
         if assistantDir.exists() {
-            display::info(&format!("Configuration directory '.loma/{}' already exists.", assistant));
+            display::info(&format!(
+                "Configuration directory '.loma/{}' already exists.",
+                assistant
+            ));
         } else {
             match fs::create_dir_all(&assistantDir) {
                 Ok(_) => display::success(&format!("Created '.loma/{}' directory.", assistant)),
                 Err(e) => {
-                    display::error(&format!("Failed to create '.loma/{}' directory: {}", assistant, e));
+                    display::error(&format!(
+                        "Failed to create '.loma/{}' directory: {}",
+                        assistant, e
+                    ));
                     return Err(crate::Error::other("Failed to create assistant directory"));
                 }
             }
@@ -106,6 +120,17 @@ Main context loaded by the assistant at the start of each session.
 
     display::divider();
     display::success("Initialization completed successfully!");
+
+    if assistant.to_lowercase() == "claude" {
+        display::step("Security & Environment Setup Guide");
+        display::info("To configure Anthropic credentials safely, it is recommended to define them manually in your environment (e.g. via shell config like .bashrc, .zshrc, config.fish, or standard environment exports):");
+        println!("  export ANTHROPIC_BASE_URL=\"<your-base-url>\"");
+        println!("  export ANTHROPIC_AUTH_TOKEN=\"<your-auth-token>\"");
+        println!();
+        display::info("Next Steps:");
+        println!("  1. Review and modify the configuration in `.loma/loma.env` if needed.");
+        println!("  2. Run `loma optimize claude` to generate optimized configurations.");
+    }
 
     Ok(())
 }
