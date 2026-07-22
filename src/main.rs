@@ -139,6 +139,10 @@ async fn main() -> Result<()> {
             loma::commands::runInit(&assistant)?;
         }
 
+        Some(Commands::Session { assistant }) => {
+            loma::commands::runSession(&assistant)?;
+        }
+
         None => {
             loma::utils::banner::showHelp();
         }
