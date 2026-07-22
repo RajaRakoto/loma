@@ -114,6 +114,13 @@ pub enum Commands {
         assistant: String,
     },
 
+    // ── Session Management ──
+    /// Manage AI assistant sessions (list, delete interactively).
+    Session {
+        /// The assistant to target.
+        assistant: String,
+    },
+
     // ── Dedicated Utilities ──
     /// View manual setup instructions for third-party tools.
     #[command(alias = "tutorialc")]
