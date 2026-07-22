@@ -67,7 +67,7 @@ pub fn runInit(assistant: &str) -> crate::Result<()> {
         display::step("Initializing native Claude architecture...");
         let assistantDir = lomaFs::getAssistantDir(assistant);
 
-        let subdirs = ["rules", "agents", "skills", "commands"];
+        let subdirs = ["rules", "agents", "commands"];
         for subdir in &subdirs {
             let path = assistantDir.join(subdir);
             if !path.exists() {

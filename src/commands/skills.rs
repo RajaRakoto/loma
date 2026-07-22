@@ -1,8 +1,6 @@
 use crate::utils::display;
-use crate::utils::fs as lomaFs;
 use inquire::MultiSelect;
-use serde_json::Value;
-use std::fs;
+use std::process::Command;
 
 pub fn runSkills(assistant: &str) -> crate::Result<()> {
     display::title(&format!("Manage Skills for {}", assistant));
@@ -19,165 +17,110 @@ pub fn runSkills(assistant: &str) -> crate::Result<()> {
     Ok(())
 }
 
+fn checkNpx() -> crate::Result<()> {
+    let output = Command::new("npx")
+        .arg("--version")
+        .output()
+        .map_err(|_| crate::Error::other("npx not found. Install Node.js from https://nodejs.org"))?;
+
+    if !output.status.success() {
+        return Err(crate::Error::other(
+            "npx is not available. Install Node.js from https://nodejs.org",
+        ));
+    }
+
+    Ok(())
+}
+
 fn runClaudeSkills() -> crate::Result<()> {
-    let assistant = "claude";
-    let assistant_dir = lomaFs::getAssistantDir(assistant);
-    if !assistant_dir.exists() {
-        display::error("Native Claude directory (.claude/) does not exist. Run 'loma init claude' first.");
-        return Err(crate::Error::other("Missing Native Claude directory"));
+    checkNpx()?;
+
+    display::step("Launching antigravity-awesome-skills for Claude Code...");
+
+    let status = Command::new("npx")
+        .args(["--yes", "antigravity-awesome-skills", "--claude"])
+        .status()
+        .map_err(|e| crate::Error::other(format!("Failed to execute npx: {}", e)))?;
+
+    if !status.success() {
+        return Err(crate::Error::other(
+            "antigravity-awesome-skills exited with an error. Check your network connection and try again.",
+        ));
     }
 
-    let skills_dir = assistant_dir.join("skills");
-    fs::create_dir_all(&skills_dir)?;
-
-    let skills_val: Value = serde_json::from_str(include_str!("../json/skills.json"))
-        .unwrap_or_else(|_| serde_json::json!({}));
-    let Some(skills_obj) = skills_val.as_object() else {
-        return Err(crate::Error::other("Failed to load skills database."));
-    };
-
-    let mut options = Vec::new();
-    let mut keys = Vec::new();
-    for (key, val) in skills_obj {
-        if let Some(title) = val["title"].as_str() {
-            let desc = val["description"].as_str().unwrap_or("");
-            options.push(format!("{} - {}", title, desc));
-            keys.push(key.clone());
-        }
-    }
-
-    if options.is_empty() {
-        display::info("No skills available.");
-        return Ok(());
-    }
-
-    let mut default_selections = Vec::new();
-    for (idx, key) in keys.iter().enumerate() {
-        let skill_file_name = format!("{}.md", key);
-        let skill_path = skills_dir.join(&skill_file_name);
-        if skill_path.exists() {
-            default_selections.push(idx);
-        }
-    }
-
-    let multi_select_prompt = MultiSelect::new(
-        "Select skills to enable/inject in this project:",
-        options.clone(),
-    );
-    let prompt_with_defaults = if !default_selections.is_empty() {
-        multi_select_prompt.with_default(&default_selections)
-    } else {
-        multi_select_prompt
-    };
-
-    let selected_choices = prompt_with_defaults
-        .with_help_message("Space to select, Enter to confirm, Arrow keys to navigate")
-        .prompt()
-        .map_err(|e| crate::Error::other(e.to_string()))?;
-
-    let selected_keys: Vec<String> = selected_choices
-        .iter()
-        .map(|choice| {
-            let idx = options.iter().position(|opt| opt == choice).unwrap();
-            keys[idx].clone()
-        })
-        .collect();
-
-    for key in &keys {
-        let skill_file_name = format!("{}.md", key);
-        let skill_path = skills_dir.join(&skill_file_name);
-
-        if selected_keys.contains(key) {
-            let content = skills_obj[key]["content"].as_str().unwrap_or("");
-            fs::write(&skill_path, content)?;
-            display::success(&format!("Enabled skill: {}", skill_file_name));
-        } else if skill_path.exists() {
-            fs::remove_file(&skill_path)?;
-            display::warn(&format!("Removed disabled skill: {}", skill_file_name));
-        }
-    }
-
-    display::divider();
-    display::success("Skills sync completed successfully!");
+    display::success("Skills installed in .claude/skills/");
     Ok(())
 }
 
 fn runOpenCodeSkills() -> crate::Result<()> {
-    let globalDir = lomaFs::getAssistantGlobalDir("opencode")
-        .ok_or_else(|| crate::Error::other("Cannot resolve home directory"))?;
-    let agents_dir = globalDir.join("agents");
-    fs::create_dir_all(&agents_dir)?;
+    display::step("Select skill categories and risk levels for OpenCode...");
 
-    // OpenCode skills are sub-agent definitions (global)
-    let skills_val: Value = serde_json::from_str(include_str!("../json/skills.json"))
-        .unwrap_or_else(|_| serde_json::json!({}));
-    let Some(skills_obj) = skills_val.as_object() else {
-        return Err(crate::Error::other("Failed to load skills database."));
-    };
+    let categories_options = vec![
+        "development",
+        "frontend",
+        "backend",
+        "devops",
+        "security",
+        "data",
+        "testing",
+        "api",
+        "design",
+        "documentation",
+    ];
 
-    let mut options = Vec::new();
-    let mut keys = Vec::new();
-    for (key, val) in skills_obj {
-        if let Some(title) = val["title"].as_str() {
-            let desc = val["description"].as_str().unwrap_or("");
-            options.push(format!("{} - {}", title, desc));
-            keys.push(key.clone());
-        }
-    }
-
-    if options.is_empty() {
-        display::info("No skills available.");
-        return Ok(());
-    }
-
-    let mut default_selections = Vec::new();
-    for (idx, key) in keys.iter().enumerate() {
-        let skill_file_name = format!("{}.md", key);
-        let skill_path = agents_dir.join(&skill_file_name);
-        if skill_path.exists() {
-            default_selections.push(idx);
-        }
-    }
-
-    let multi_select_prompt = MultiSelect::new(
-        "Select skills to enable as global OpenCode sub-agents:",
-        options.clone(),
-    );
-    let prompt_with_defaults = if !default_selections.is_empty() {
-        multi_select_prompt.with_default(&default_selections)
-    } else {
-        multi_select_prompt
-    };
-
-    let selected_choices = prompt_with_defaults
-        .with_help_message("Space to select, Enter to confirm, Arrow keys to navigate")
+    let selected_categories = MultiSelect::new("Select skill categories:", categories_options)
+        .with_help_message("Space to toggle, Enter to confirm, Arrow keys to navigate")
         .prompt()
         .map_err(|e| crate::Error::other(e.to_string()))?;
 
-    let selected_keys: Vec<String> = selected_choices
-        .iter()
-        .map(|choice| {
-            let idx = options.iter().position(|opt| opt == choice).unwrap();
-            keys[idx].clone()
-        })
-        .collect();
-
-    for key in &keys {
-        let skill_file_name = format!("{}.md", key);
-        let skill_path = agents_dir.join(&skill_file_name);
-
-        if selected_keys.contains(key) {
-            let content = skills_obj[key]["content"].as_str().unwrap_or("");
-            fs::write(&skill_path, content)?;
-            display::success(&format!("Enabled global sub-agent: {}", skill_file_name));
-        } else if skill_path.exists() {
-            fs::remove_file(&skill_path)?;
-            display::warn(&format!("Removed disabled sub-agent: {}", skill_file_name));
-        }
+    if selected_categories.is_empty() {
+        display::warn("No categories selected. Aborting.");
+        return Ok(());
     }
 
-    display::divider();
-    display::success("OpenCode sub-agent skills sync completed!");
-    display::info("Global sub-agents are stored in: ~/.config/opencode/agents/");
+    let risk_options = vec!["none", "safe", "moderate", "high"];
+
+    let selected_risks = MultiSelect::new("Select risk levels:", risk_options)
+        .with_help_message("Space to toggle, Enter to confirm, Arrow keys to navigate")
+        .prompt()
+        .map_err(|e| crate::Error::other(e.to_string()))?;
+
+    if selected_risks.is_empty() {
+        display::warn("No risk levels selected. Aborting.");
+        return Ok(());
+    }
+
+    checkNpx()?;
+
+    let categories = selected_categories.join(",");
+    let risks = selected_risks.join(",");
+
+    display::step(&format!(
+        "Installing skills with categories: {}, risk levels: {}...",
+        categories, risks
+    ));
+
+    let status = Command::new("npx")
+        .args([
+            "--yes",
+            "antigravity-awesome-skills",
+            "--path",
+            ".agents/skills",
+            "--category",
+            &categories,
+            "--risk",
+            &risks,
+        ])
+        .status()
+        .map_err(|e| crate::Error::other(format!("Failed to execute npx: {}", e)))?;
+
+    if !status.success() {
+        return Err(crate::Error::other(
+            "antigravity-awesome-skills exited with an error. Check your network connection and try again.",
+        ));
+    }
+
+    display::success("Skills installed in .agents/skills/");
+    display::info("OpenCode discovers these skills automatically via the built-in skill tool.");
     Ok(())
 }

@@ -21,13 +21,12 @@ pub fn runSession(assistant: &str) -> crate::Result<()> {
 
 fn runOpenCodeSession() -> crate::Result<()> {
     if !lomaFs::opencodeIsInstalled() {
-        display::error("OpenCode not installed. Install with 'loma install opencode'.");
+        display::error("OpenCode not installed.");
+        display::info("Install with: loma install opencode");
         return Err(crate::Error::other("OpenCode not found"));
     }
 
     loop {
-        display::title("OpenCode Session Manager");
-
         let sessions = match fetchSessions() {
             Ok(s) => s,
             Err(e) => {
@@ -39,14 +38,18 @@ fn runOpenCodeSession() -> crate::Result<()> {
             }
         };
 
-        displaySessionsTable(&sessions);
-
         if sessions.is_empty() {
-            if !display::confirm("No sessions. Return to main menu?") {
-                break;
-            }
+            display::info("No active sessions found.");
             break;
         }
+
+        display::title(&format!(
+            "OpenCode Session Manager ({} session{})",
+            sessions.len(),
+            if sessions.len() > 1 { "s" } else { "" }
+        ));
+
+        displaySessionsTable(&sessions);
 
         let choices = vec![
             "Delete a session",
@@ -56,7 +59,7 @@ fn runOpenCodeSession() -> crate::Result<()> {
             "Exit",
         ];
 
-        let choice = Select::new("Select an action:", choices)
+        let choice = Select::new("Select action:", choices)
             .with_help_message("Enter to confirm, Arrow keys to navigate")
             .prompt()
             .map_err(|e| crate::Error::other(e.to_string()))?;
@@ -77,10 +80,15 @@ fn runOpenCodeSession() -> crate::Result<()> {
                 if !selected.is_empty()
                     && display::confirm(&format!("Delete {} session(s)?", selected.len()))
                 {
-                    for s in &selected {
-                        deleteSession(&s.id)?;
+                    let (deleted, errors) = bulkDeleteSessions(&selected);
+                    display::success(&format!(
+                        "Deleted {}/{} session(s).",
+                        deleted,
+                        selected.len()
+                    ));
+                    for (id, err) in &errors {
+                        display::error(&format!("Delete failed [{}]: {}", id, err));
                     }
-                    display::success(&format!("Deleted {} session(s).", selected.len()));
                 }
             }
             "Delete ALL sessions" => {
@@ -88,19 +96,54 @@ fn runOpenCodeSession() -> crate::Result<()> {
                     "Delete ALL {} session(s)? This cannot be undone.",
                     sessions.len()
                 )) {
-                    for s in &sessions {
-                        deleteSession(&s.id)?;
+                    let (deleted, errors) = bulkDeleteSessions(&sessions);
+                    display::success(&format!(
+                        "Deleted {}/{} session(s).",
+                        deleted,
+                        sessions.len()
+                    ));
+                    for (id, err) in &errors {
+                        display::error(&format!("Delete failed [{}]: {}", id, err));
                     }
-                    display::success(&format!("Deleted all {} session(s).", sessions.len()));
+                    if errors.is_empty() {
+                        display::info("No remaining sessions. Returning to main menu.");
+                        break;
+                    }
                 }
             }
             "Refresh list" => continue,
             "Exit" => break,
             _ => {}
         }
+
+        println!();
+        if !display::confirm("Continue managing sessions?") {
+            break;
+        }
     }
 
     Ok(())
+}
+
+fn bulkDeleteSessions(sessions: &[SessionInfo]) -> (usize, Vec<(String, String)>) {
+    let mut deleted = 0;
+    let mut errors = Vec::new();
+    let total = sessions.len();
+
+    for (i, s) in sessions.iter().enumerate() {
+        display::info(&format!(
+            "[{}/{}] Deleting {}...",
+            i + 1,
+            total,
+            s.id
+        ));
+        match deleteSession(&s.id) {
+            Ok(()) => deleted += 1,
+            Err(e) => errors.push((s.id.clone(), e.to_string())),
+        }
+    }
+
+    (deleted, errors)
 }
 
 fn fetchSessions() -> crate::Result<Vec<SessionInfo>> {
@@ -259,8 +302,7 @@ fn deleteSession(id: &str) -> crate::Result<()> {
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
         return Err(crate::Error::other(format!(
-            "Failed to delete session {}: {}",
-            id,
+            "{}",
             stderr.trim()
         )));
     }
