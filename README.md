@@ -34,6 +34,44 @@ Loma applies the same environment-tuning pipeline to both — diagnostics, compa
 
 ---
 
+## Workflow: Deepseek + OpenCode
+
+A complete session from zero to productive with loma and OpenCode:
+
+```bash
+# 1. Install loma
+cargo install --path .
+
+# 2. Bootstrap the project
+loma init opencode          # AGENTS.md + ~/.config/opencode/ + .loma/loma.env (Deepseek defaults)
+loma doctor                 # verify everything is healthy
+
+# 3. Connect Deepseek provider (OpenCode built-in)
+opencode                    # first launch opencode
+/connect deepseek           # paste your Deepseek API key when prompted
+
+# 4. Tune OpenCode for token efficiency
+loma optimize opencode      # maps LOMA_OPENCODE_* env vars → ~/.config/opencode/opencode.json
+loma gen opencode           # inject guidelines into AGENTS.md (plan mode, compact, MCP discipline…)
+
+# 5. Install domain skills (on-demand)
+loma skills opencode        # pick categories + risk levels → npx antigravity-awesome-skills
+
+# 6. Start coding
+opencode                    # OpenCode reads AGENTS.md + ~/.config/opencode/ + .agents/skills/
+```
+
+Inside OpenCode, loma's tuning enables a tight loop:
+
+```
+# Always start non-trivial work in Plan mode (Tab key)
+# Use /compact when context reaches ~50%
+# One session = one focused task
+# Skills auto-load via the built-in skill tool
+```
+
+---
+
 ## Commands
 
 ### Lifecycle
