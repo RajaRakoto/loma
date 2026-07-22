@@ -160,6 +160,41 @@ const SELECTABLE_ITEMS: &[CheckboxOption] = &[
         label: "[POCKETBASE] PocketBase Typegen",
         path: &["pocketbase", "typegen"],
     },
+    CheckboxOption {
+        id: "opencode.plan-mode",
+        label: "[OPENCODE] Plan Mode First",
+        path: &["opencode", "plan-mode"],
+    },
+    CheckboxOption {
+        id: "opencode.compact-strategy",
+        label: "[OPENCODE] Compact Strategy",
+        path: &["opencode", "compact-strategy"],
+    },
+    CheckboxOption {
+        id: "opencode.mcp-discipline",
+        label: "[OPENCODE] MCP on Demand",
+        path: &["opencode", "mcp-discipline"],
+    },
+    CheckboxOption {
+        id: "opencode.sub-agents",
+        label: "[OPENCODE] Sub-Agent Usage",
+        path: &["opencode", "sub-agents"],
+    },
+    CheckboxOption {
+        id: "opencode.include-exclude",
+        label: "[OPENCODE] Include/Exclude Patterns",
+        path: &["opencode", "include-exclude"],
+    },
+    CheckboxOption {
+        id: "opencode.sessions",
+        label: "[OPENCODE] One Session = One Task",
+        path: &["opencode", "sessions"],
+    },
+    CheckboxOption {
+        id: "opencode.custom-commands",
+        label: "[OPENCODE] Custom Commands",
+        path: &["opencode", "custom-commands"],
+    },
 ];
 
 pub fn loadInjectJson() -> Value {
@@ -652,6 +687,104 @@ pub fn promptAndGenerateClaude() -> crate::Result<()> {
     let serialized = serde_json::to_string_pretty(&registry)?;
     fs::write(&registry_path, serialized)?;
     crate::utils::display::success("Registry updated successfully!");
+
+    Ok(())
+}
+
+pub fn promptAndGenerateOpenCode() -> crate::Result<()> {
+    let jsonRoot = loadInjectJson();
+    if jsonRoot.is_null() {
+        return Err(crate::Error::other("Failed to parse guidelines structure."));
+    }
+
+    crate::utils::display::step("Step 1: Choose opencode section");
+    let opencode_sections = vec!["plan-mode", "compact-strategy", "mcp-discipline", "sub-agents", "include-exclude", "sessions", "custom-commands"];
+    let parent_key = Select::new("Choose opencode section:", opencode_sections)
+        .prompt()
+        .map_err(|e| crate::Error::other(e.to_string()))?;
+
+    crate::utils::display::step("Step 2: Confirm injection target");
+    let destinations = vec!["AGENTS.md (project root)", "~/.config/opencode/agents/ (global sub-agent)"];
+    let destination = Select::new("Choose destination:", destinations)
+        .prompt()
+        .map_err(|e| crate::Error::other(e.to_string()))?;
+
+    let section_val = &jsonRoot["opencode"][parent_key];
+    let full_markdown = renderNode(section_val, 1);
+
+    crate::utils::display::step("Step 3: Preview content");
+    let preview_lines: Vec<&str> = full_markdown.lines().take(6).collect();
+    for line in &preview_lines {
+        println!("  {}", line);
+    }
+    if full_markdown.lines().count() > 6 {
+        println!("  \x1b[2m... ({} more lines)\x1b[0m", full_markdown.lines().count() - 6);
+    }
+    println!();
+
+    if !Confirm::new("Confirm injection? (y/n)")
+        .prompt()
+        .map_err(|e| crate::Error::other(e.to_string()))?
+    {
+        crate::utils::display::info("Generation aborted by user.");
+        return Ok(());
+    }
+
+    if destination.starts_with("AGENTS.md") {
+        let final_path = std::path::PathBuf::from("AGENTS.md");
+
+        if final_path.exists() {
+            crate::utils::display::warn("File 'AGENTS.md' already exists.");
+            let collision_options = vec!["merge", "overwrite"];
+            let choice = Select::new("Choose collision strategy:", collision_options)
+                .prompt()
+                .map_err(|e| crate::Error::other(e.to_string()))?;
+
+            match choice {
+                "overwrite" => {
+                    std::fs::write(&final_path, &full_markdown)?;
+                    crate::utils::display::success("Overwritten: AGENTS.md");
+                }
+                "merge" => {
+                    let existing_content = std::fs::read_to_string(&final_path)?;
+                    let merged = merge_markdown(&existing_content, &full_markdown);
+                    std::fs::write(&final_path, &merged)?;
+                    crate::utils::display::success("Merged: AGENTS.md");
+                }
+                _ => {}
+            }
+        } else {
+            std::fs::write(&final_path, &full_markdown)?;
+            crate::utils::display::success("Created: AGENTS.md");
+        }
+    } else {
+        // Global sub-agent destination
+        if let Some(globalDir) = crate::utils::fs::getAssistantGlobalDir("opencode") {
+            let agentsDir = globalDir.join("agents");
+            std::fs::create_dir_all(&agentsDir)?;
+            let filename = format!("{}.md", parent_key.replace('-', "_"));
+            let final_path = agentsDir.join(&filename);
+
+            if final_path.exists() {
+                crate::utils::display::warn(&format!("Sub-agent '{}' already exists.", filename));
+                if Confirm::new("Overwrite? (y/n)")
+                    .prompt()
+                    .map_err(|e| crate::Error::other(e.to_string()))?
+                {
+                    std::fs::write(&final_path, &full_markdown)?;
+                    crate::utils::display::success(&format!("Overwritten: {}", final_path.display()));
+                } else {
+                    crate::utils::display::info("Skipped.");
+                }
+            } else {
+                std::fs::write(&final_path, &full_markdown)?;
+                crate::utils::display::success(&format!("Created sub-agent: {}", final_path.display()));
+            }
+        }
+    }
+
+    crate::utils::display::divider();
+    crate::utils::display::success("OpenCode guidelines generated successfully!");
 
     Ok(())
 }

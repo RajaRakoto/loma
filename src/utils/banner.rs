@@ -27,8 +27,8 @@ pub fn showHelp() {
     println!("\x1b[1mCommands:\x1b[0m");
     println!();
     println!("  \x1b[35;1mSetup & Initialization\x1b[0m");
-    println!("    \x1b[36minit <assistant>\x1b[0m      Initialize configuration files for loma");
-    println!("    \x1b[36minstall <assistant>\x1b[0m   Install an AI assistant");
+    println!("    \x1b[36minit <assistant>\x1b[0m      Initialize configuration files for loma (supports: claude, opencode)");
+    println!("    \x1b[36minstall <assistant>\x1b[0m   Install an AI assistant (supports: claude, opencode)");
     println!("    \x1b[36mremove <assistant>\x1b[0m    Completely remove an AI assistant and all associated files");
     println!(
         "    \x1b[36mreinstall <assistant>\x1b[0m Remove then cleanly reinstall an AI assistant"
@@ -41,10 +41,10 @@ pub fn showHelp() {
         "    \x1b[36mgen <assistant>\x1b[0m       Generate guidelines/conventions for an assistant"
     );
     println!("    \x1b[36mskills <assistant>\x1b[0m    Manage custom, on-demand assistant capability skills");
-    println!("    \x1b[36msync <assistant> (beta)\x1b[0m Synchronize and repair assistant configurations (CRITICAL for structural integrity)");
+    println!("    \x1b[36msync <assistant>\x1b[0m Synchronize and repair assistant configurations (supports: claude, opencode)");
     println!();
     println!("  \x1b[35;1mMaintenance & Diagnostics\x1b[0m");
-    println!("    \x1b[36mstatus <assistant> (beta)\x1b[0m Show current status of an AI assistant");
+    println!("    \x1b[36mstatus <assistant>\x1b[0m Show current status of an AI assistant");
     println!("    \x1b[36mdoctor\x1b[0m                Perform diagnostic health checks on the global environment");
     println!("    \x1b[36mbackup <assistant>\x1b[0m    Back up AI assistant configuration");
     println!(

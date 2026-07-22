@@ -65,7 +65,48 @@ pub fn runDoctor() -> crate::Result<()> {
         }
     }
 
-    // 6. Check internet connectivity to npm registry
+    // 6. Check OpenCode installation (if applicable)
+    display::step("Checking OpenCode...");
+    if lomaFs::opencodeIsInstalled() {
+        let binaryPath = lomaFs::getOpenCodeBinary();
+        display::success(&format!("OpenCode binary found: {}", binaryPath));
+        let versionOutput = std::process::Command::new(&binaryPath).arg("--version").output();
+        if let Ok(o) = versionOutput {
+            let ver = String::from_utf8_lossy(&o.stdout).trim().to_string();
+            display::info(&format!("OpenCode version: {}", ver));
+        }
+    } else {
+        display::warn("OpenCode is not installed. Run 'loma install opencode' to install it.");
+    }
+
+    // 7. Check AGENTS.md
+    display::step("Checking AGENTS.md...");
+    let agents_md = std::path::Path::new("AGENTS.md");
+    if agents_md.exists() {
+        display::success("AGENTS.md is present.");
+    } else {
+        display::info("AGENTS.md not found. Run 'loma init opencode' to create one.");
+    }
+
+    // 8. Check OpenCode global config
+    display::step("Checking OpenCode global configuration...");
+    if let Some(globalDir) = lomaFs::getAssistantGlobalDir("opencode") {
+        let configFile = globalDir.join("opencode.json");
+        if configFile.exists() {
+            if let Ok(content) = std::fs::read_to_string(&configFile) {
+                if serde_json::from_str::<serde_json::Value>(&content).is_ok() {
+                    display::success("opencode.json is valid JSON.");
+                } else {
+                    display::error("opencode.json is not valid JSON!");
+                    healthy = false;
+                }
+            }
+        } else {
+            display::info("Global opencode.json not found. Run 'loma optimize opencode' to create one.");
+        }
+    }
+
+    // 9. Check internet connectivity to npm registry
     display::step("Checking internet connectivity to npm registry...");
     if lomaFs::cmdExists("curl") {
         let check = Command::new("curl")

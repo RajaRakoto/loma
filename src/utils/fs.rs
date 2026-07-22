@@ -5,6 +5,7 @@ use std::process::Command;
 
 pub use crate::utils::r#const::{
     CLAUDE_BINARY_PATHS, CLAUDE_CONFIG_DIRS, CLAUDE_DATA_DIRS, CLAUDE_DNF_REPO_FILES,
+    OPENCODE_BINARY_PATHS, OPENCODE_CONFIG_DIRS, OPENCODE_GLOBAL_CONFIG_DIR,
 };
 
 /// Get the project-local .loma directory path.
@@ -12,12 +13,20 @@ pub fn getLomaDir() -> PathBuf {
     PathBuf::from(".loma")
 }
 
+/// Get the global configuration directory for a specific assistant.
+pub fn getAssistantGlobalDir(assistant: &str) -> Option<PathBuf> {
+    match assistant.to_lowercase().as_str() {
+        "opencode" => get_home_dir().map(|home| home.join(OPENCODE_GLOBAL_CONFIG_DIR)),
+        _ => None,
+    }
+}
+
 /// Get the configuration directory for a specific assistant.
 pub fn getAssistantDir(assistant: &str) -> PathBuf {
-    if assistant.to_lowercase() == "claude" {
-        PathBuf::from(CLAUDE_CONFIG_DIRS[0])
-    } else {
-        getLomaDir().join(assistant)
+    match assistant.to_lowercase().as_str() {
+        "claude" => PathBuf::from(CLAUDE_CONFIG_DIRS[0]),
+        "opencode" => PathBuf::from(OPENCODE_CONFIG_DIRS[0]),
+        _ => getLomaDir().join(assistant),
     }
 }
 
@@ -224,7 +233,7 @@ pub fn requireNpm() -> crate::Result<()> {
 
     if majorVersion < 18 {
         crate::utils::display::error(&format!(
-            "Node.js {} detected. Claude Code requires Node.js >= 18.",
+            "Node.js {} detected. Node.js >= 18 is required.",
             cleanVersion
         ));
         return Err(crate::Error::other("Node.js version too low"));
@@ -320,6 +329,58 @@ pub fn cleanShellConfigs() -> crate::Result<()> {
     }
 
     Ok(())
+}
+
+/// A native, platform-agnostic resolver to locate the `opencode` binary.
+pub fn getOpenCodeBinary() -> String {
+    let path_var = match std::env::var_os("PATH") {
+        Some(p) => p,
+        None => return String::new(),
+    };
+    let paths = std::env::split_paths(&path_var);
+    let extensions: &[&str] = if cfg!(windows) {
+        &[".exe", ".cmd", ".bat", ".com", ""]
+    } else {
+        &[""]
+    };
+
+    for path in paths {
+        for ext in extensions {
+            let exe_name = format!("opencode{}", ext);
+            let exe_path = path.join(&exe_name);
+            if exe_path.is_file() {
+                return exe_path.to_string_lossy().to_string();
+            }
+        }
+    }
+
+    if let Some(homePath) = get_home_dir() {
+        for p in OPENCODE_BINARY_PATHS {
+            let fullPath = if p.starts_with('/') {
+                PathBuf::from(p)
+            } else {
+                homePath.join(p)
+            };
+            if fullPath.exists() {
+                return fullPath.to_string_lossy().to_string();
+            }
+
+            if cfg!(windows) {
+                for ext in &[".cmd", ".exe", ".bat"] {
+                    let win_path = fullPath.with_extension(ext.trim_start_matches('.'));
+                    if win_path.exists() {
+                        return win_path.to_string_lossy().to_string();
+                    }
+                }
+            }
+        }
+    }
+
+    String::new()
+}
+
+pub fn opencodeIsInstalled() -> bool {
+    !getOpenCodeBinary().is_empty()
 }
 
 pub fn createZip(

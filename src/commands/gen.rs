@@ -9,9 +9,13 @@ pub fn runGen(assistant: &str) -> crate::Result<()> {
         return gen_interactive::promptAndGenerateClaude();
     }
 
+    if assistant_lower == "opencode" {
+        return gen_interactive::promptAndGenerateOpenCode();
+    }
+
     if assistant_lower != "copilot" && assistant_lower != "copilot.md" {
         return Err(crate::Error::validation(format!(
-            "Unknown or unsupported assistant/template: {}. Loma gen only supports 'claude' or 'copilot'.",
+            "Unknown or unsupported assistant/template: {}. Loma gen only supports 'claude', 'opencode', or 'copilot'.",
             assistant
         )));
     }

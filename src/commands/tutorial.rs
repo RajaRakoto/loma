@@ -31,6 +31,7 @@ pub fn runTutorial(tool: Option<&str>) -> crate::Result<()> {
     display::title("Loma Tutorials");
 
     let mut keys = vec![
+        "opencode".to_string(),
         "rtk".to_string(),
         "caveman".to_string(),
         "token_optimizer".to_string(),

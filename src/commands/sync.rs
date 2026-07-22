@@ -26,14 +26,21 @@ pub fn calculate_hash(content: &str) -> String {
 pub fn runSync(assistant: &str) -> crate::Result<()> {
     display::title(&format!("Sync & Repair for {}", assistant));
 
-    if assistant.to_lowercase() != "claude" {
-        display::warn("Sync command is only supported for 'claude' assistant.");
-        return Ok(());
+    match assistant.to_lowercase().as_str() {
+        "claude" => runClaudeSync(),
+        "opencode" => runOpenCodeSync(),
+        _ => {
+            display::warn("Sync command is only supported for 'claude' and 'opencode' assistants.");
+            Ok(())
+        }
     }
+}
 
+fn runClaudeSync() -> crate::Result<()> {
+    let assistant = "claude";
     let assistantDir = lomaFs::getAssistantDir(assistant);
     if !assistantDir.exists() {
-        display::error("Native Claude directory (.claude/) does not exist. Run 'loma init' first.");
+        display::error("Native Claude directory (.claude/) does not exist. Run 'loma init claude' first.");
         return Err(crate::Error::other("Missing Native Claude directory"));
     }
 
@@ -73,12 +80,10 @@ pub fn runSync(assistant: &str) -> crate::Result<()> {
         existing_files.len()
     ));
 
-    // 1. Detect Inconsistencies & Duplicates
     let mut missing_tracked = Vec::new();
     let mut untracked_files = Vec::new();
     let mut file_hashes: HashMap<String, Vec<PathBuf>> = HashMap::new();
 
-    // Check for tracked files that are missing on disk
     for (key, entry) in &registry {
         let path = Path::new(&entry.target);
         if !path.exists() {
@@ -86,7 +91,6 @@ pub fn runSync(assistant: &str) -> crate::Result<()> {
         }
     }
 
-    // Check for untracked files on disk, and build duplicate hash map
     for file in &existing_files {
         let file_str = file.to_string_lossy().to_string();
         let is_tracked = registry.values().any(|e| e.target == file_str);
@@ -100,7 +104,6 @@ pub fn runSync(assistant: &str) -> crate::Result<()> {
         }
     }
 
-    // 2. Report Inconsistencies
     if !missing_tracked.is_empty() {
         display::warn(&format!(
             "Detected {} missing tracked files:",
@@ -123,7 +126,6 @@ pub fn runSync(assistant: &str) -> crate::Result<()> {
         }
     }
 
-    // 3. Report Duplicates
     let mut duplicate_found = false;
     for (hash, files) in &file_hashes {
         if files.len() > 1 {
@@ -142,7 +144,6 @@ pub fn runSync(assistant: &str) -> crate::Result<()> {
         display::success("No duplicate configurations detected.");
     }
 
-    // 4. Verify References
     display::step("Verifying reference files...");
     let claude_md = Path::new("CLAUDE.md");
     if !claude_md.exists() {
@@ -168,11 +169,9 @@ Load rules, agents, skills and commands from `.claude/`.
         }
     }
 
-    // 5. Repair / Sync Registry
     if !missing_tracked.is_empty() || !untracked_files.is_empty() {
         display::step("Repairing registry mapping...");
 
-        // Remove missing entries
         for key in &missing_tracked {
             registry.remove(key);
             display::success(&format!(
@@ -181,10 +180,8 @@ Load rules, agents, skills and commands from `.claude/`.
             ));
         }
 
-        // Try to add untracked entries dynamically
         for file in &untracked_files {
             let filename = file.file_name().unwrap_or_default().to_string_lossy();
-            // Infer key by removing suffixes and converting to lowercase
             let clean_key = filename
                 .replace("_RULES.md", "")
                 .replace("_AGENTS.md", "")
@@ -219,7 +216,6 @@ Load rules, agents, skills and commands from `.claude/`.
             }
         }
 
-        // Save registry back
         if let Some(parent) = registry_path.parent() {
             fs::create_dir_all(parent)?;
         }
@@ -232,5 +228,60 @@ Load rules, agents, skills and commands from `.claude/`.
 
     display::divider();
     display::success("Sync completed successfully!");
+    Ok(())
+}
+
+fn runOpenCodeSync() -> crate::Result<()> {
+    display::step("Checking OpenCode configuration health...");
+
+    // Check AGENTS.md
+    let agents_md = Path::new("AGENTS.md");
+    if !agents_md.exists() {
+        display::warn("AGENTS.md is missing. Run 'loma init opencode' to create one.");
+    } else {
+        display::success("AGENTS.md is present.");
+    }
+
+    // Check global config
+    if let Some(globalDir) = lomaFs::getAssistantGlobalDir("opencode") {
+        if !globalDir.exists() {
+            display::info("Global OpenCode config directory not found. Run 'loma init opencode'.");
+        } else {
+            display::success(&format!("Global config directory: {}", globalDir.display()));
+
+            let config_file = globalDir.join("opencode.json");
+            if config_file.exists() {
+                if let Ok(content) = fs::read_to_string(&config_file) {
+                    if serde_json::from_str::<serde_json::Value>(&content).is_ok() {
+                        display::success("opencode.json is valid JSON.");
+                    } else {
+                        display::error("opencode.json is not valid JSON!");
+                    }
+                }
+            } else {
+                display::info("opencode.json not found. Run 'loma optimize opencode'.");
+            }
+
+            // Check sub-agents
+            let agents_dir = globalDir.join("agents");
+            if agents_dir.exists() {
+                if let Ok(entries) = fs::read_dir(&agents_dir) {
+                    let count = entries.flatten().count();
+                    display::info(&format!("{} global sub-agent(s) configured.", count));
+                }
+            }
+        }
+    }
+
+    // Check local .opencode/ overrides
+    let localDir = lomaFs::getAssistantDir("opencode");
+    if localDir.exists() {
+        display::info("Local .opencode/ overrides are present.");
+    } else {
+        display::info("No local .opencode/ overrides (all config is global).");
+    }
+
+    display::divider();
+    display::success("OpenCode sync completed!");
     Ok(())
 }
