@@ -6,10 +6,13 @@ use std::fs;
 pub fn runBackup(assistant: &str) -> crate::Result<()> {
     display::title(&format!("{} Configuration Backup", assistant));
 
+    if assistant.to_lowercase() == "opencode" {
+        return runOpenCodeBackup();
+    }
+
     let assistantDir = lomaFs::getAssistantDir(assistant);
     let assistantConfigFile = lomaFs::getAssistantConfigFile(assistant);
 
-    // Check if there is something to back up
     let hasData = assistantDir.exists() || assistantConfigFile.exists();
 
     if !hasData {
@@ -56,7 +59,6 @@ pub fn runBackup(assistant: &str) -> crate::Result<()> {
         ch
     };
 
-    // Ensure archives directory exists
     let archivesDir = lomaFs::getArchivesDir();
     fs::create_dir_all(&archivesDir)?;
 
@@ -150,6 +152,97 @@ pub fn runBackup(assistant: &str) -> crate::Result<()> {
 
     if let Ok(absPath) = std::fs::canonicalize(&archivePath) {
         display::info(&format!("Archive location: {}", absPath.to_string_lossy()));
+    }
+
+    Ok(())
+}
+
+fn copyDirRecursive(src: &std::path::Path, dst: &std::path::Path) -> std::io::Result<()> {
+    if src.is_dir() {
+        for entry in fs::read_dir(src)? {
+            let entry = entry?;
+            let entry_path = entry.path();
+            let name = entry_path.file_name().unwrap_or_default();
+            let dst_path = dst.join(name);
+            if entry_path.is_dir() {
+                fs::create_dir_all(&dst_path)?;
+                let _ = copyDirRecursive(&entry_path, &dst_path);
+            } else {
+                let _ = fs::copy(&entry_path, &dst_path);
+            }
+        }
+    }
+    Ok(())
+}
+
+fn runOpenCodeBackup() -> crate::Result<()> {
+    let archivesDir = lomaFs::getArchivesDir();
+    fs::create_dir_all(&archivesDir)?;
+
+    let timestamp = Local::now().format("%Y%m%d-%H%M%S").to_string();
+    let archiveName = format!("opencode-backup-{}.zip", timestamp);
+    let archivePath = archivesDir.join(&archiveName);
+
+    display::step("Backing up OpenCode configuration...");
+
+    let mut itemsToBackup = Vec::new();
+    let tempDir = lomaFs::getLomaDir().join("tmp_opencode_backup");
+    let _ = fs::remove_dir_all(&tempDir);
+    fs::create_dir_all(&tempDir)?;
+
+    // Backup AGENTS.md (project-level)
+    let agentsMd = std::path::Path::new("AGENTS.md");
+    if agentsMd.exists() {
+        let dest = tempDir.join("AGENTS.md");
+        fs::copy(agentsMd, &dest)?;
+        itemsToBackup.push("AGENTS.md".to_string());
+    }
+
+    // Backup .opencode/ (project-level overrides)
+    let localDir = lomaFs::getAssistantDir("opencode");
+    if localDir.exists() {
+        let dest = tempDir.join(localDir.file_name().unwrap_or_default());
+        let _ = fs::create_dir_all(&dest);
+        let _ = copyDirRecursive(&localDir, &dest);
+        itemsToBackup.push(localDir.file_name().unwrap_or_default().to_string_lossy().to_string());
+    }
+
+    // Backup global config
+    if let Some(globalDir) = lomaFs::getAssistantGlobalDir("opencode") {
+        if globalDir.exists() {
+            let dest = tempDir.join("global_config");
+            let _ = copyDirRecursive(&globalDir, &dest);
+            itemsToBackup.push("global_config".to_string());
+        }
+    }
+
+    if itemsToBackup.is_empty() {
+        display::warn("No OpenCode configuration found to back up.");
+        display::info("Run 'loma init opencode' first to create configuration.");
+        let _ = fs::remove_dir_all(&tempDir);
+        return Ok(());
+    }
+
+    display::info("Items included in backup:");
+    for item in &itemsToBackup {
+        println!("    {}", item);
+    }
+    println!();
+
+    let allFiles: Vec<String> = fs::read_dir(&tempDir)?
+        .filter_map(|e| e.ok())
+        .map(|e| e.file_name().to_string_lossy().to_string())
+        .collect();
+
+    lomaFs::createZip(&tempDir, &allFiles, &archivePath)?;
+
+    let _ = fs::remove_dir_all(&tempDir);
+
+    display::success(&format!("OpenCode backup created: {}", archivePath.display()));
+
+    if let Ok(meta) = archivePath.metadata() {
+        let sizeKb = meta.len() as f64 / 1024.0;
+        display::info(&format!("Archive size:     {:.2} KB", sizeKb));
     }
 
     Ok(())

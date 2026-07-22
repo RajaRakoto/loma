@@ -17,3 +17,15 @@ pub const CLAUDE_BINARY_PATHS: &[&str] = &[
     ".npm-global/bin/claude",
     ".bun/bin/claude",
 ];
+
+pub const OPENCODE_CONFIG_DIRS: &[&str] = &[".opencode"];
+pub const OPENCODE_GLOBAL_CONFIG_DIR: &str = ".config/opencode";
+pub const OPENCODE_BINARY_PATHS: &[&str] = &[
+    ".local/bin/opencode",
+    "/usr/local/bin/opencode",
+    "/usr/bin/opencode",
+];
+pub const OPENCODE_DATA_DIRS: &[&str] = &[
+    ".local/share/opencode",
+    ".cache/opencode",
+];

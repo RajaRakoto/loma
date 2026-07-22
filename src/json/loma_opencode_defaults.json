@@ -1,0 +1,42 @@
+[
+  {
+    "section": "Model Configuration",
+    "vars": [
+      {"key": "LOMA_OPENCODE_MODEL", "value": "deepseek/deepseek-v4-flash", "comment": "Default model for opencode"},
+      {"key": "LOMA_OPENCODE_MAX_TOKENS", "value": "4096", "comment": "Max output tokens per response"},
+      {"key": "LOMA_OPENCODE_TEMPERATURE", "value": "0.0", "comment": "Sampling temperature (0 = deterministic)"}
+    ]
+  },
+  {
+    "section": "Context Management",
+    "vars": [
+      {"key": "LOMA_OPENCODE_AUTO_COMPACT", "value": "true", "comment": "Enable auto context compaction"},
+      {"key": "LOMA_OPENCODE_COMPACT_THRESHOLD", "value": "50%", "comment": "Compact when context reaches this threshold"},
+      {"key": "LOMA_OPENCODE_CONTEXT_LIMIT", "value": "64000", "comment": "Maximum context window in tokens"}
+    ]
+  },
+  {
+    "section": "Include/Exclude Patterns",
+    "vars": [
+      {"key": "LOMA_OPENCODE_INCLUDE_PATTERNS", "value": "src/**,*.toml,*.json,*.rs,Cargo.*,*.md", "comment": "Glob patterns to include"},
+      {"key": "LOMA_OPENCODE_EXCLUDE_PATTERNS", "value": "node_modules/,target/,dist/,*.lock,.git/,tmp/,.cache/", "comment": "Glob patterns to exclude"}
+    ]
+  },
+  {
+    "section": "MCP & Tool Configuration",
+    "vars": [
+      {"key": "LOMA_OPENCODE_MCP_ON_DEMAND", "value": "true", "comment": "Activate MCP servers only when needed"},
+      {"key": "LOMA_OPENCODE_PLAN_FIRST", "value": "true", "comment": "Always start in Plan mode for non-trivial tasks"},
+      {"key": "LOMA_OPENCODE_DISABLE_TELEMETRY", "value": "1", "comment": "Disable telemetry"},
+      {"key": "LOMA_OPENCODE_DISABLE_ERROR_REPORTING", "value": "1", "comment": "Disable error reporting"}
+    ]
+  },
+  {
+    "section": "Deepseek Provider Configuration",
+    "vars": [
+      {"key": "LOMA_OPENCODE_API_KEY", "value": "", "comment": "Deepseek API key (set via /connect in opencode)"},
+      {"key": "LOMA_OPENCODE_API_BASE_URL", "value": "https://api.deepseek.com", "comment": "Deepseek API base URL"},
+      {"key": "LOMA_OPENCODE_API_TIMEOUT_MS", "value": "300000", "comment": "API timeout in milliseconds"}
+    ]
+  }
+]

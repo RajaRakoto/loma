@@ -11,6 +11,7 @@ pub trait AssistantProvider {
 pub fn getProvider(assistant: &str) -> crate::Result<Box<dyn AssistantProvider>> {
     match assistant.to_lowercase().as_str() {
         "claude" => Ok(Box::new(claude::ClaudeProvider::new())),
+        "opencode" => Ok(Box::new(opencode::OpenCodeProvider::new())),
         _ => Err(crate::Error::validation(format!(
             "Unknown or unsupported assistant: {}",
             assistant
@@ -19,3 +20,4 @@ pub fn getProvider(assistant: &str) -> crate::Result<Box<dyn AssistantProvider>>
 }
 
 pub mod claude;
+pub mod opencode;

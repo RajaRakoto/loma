@@ -40,5 +40,18 @@
       "Generate your knowledge graph: /graphify . (or equivalent run)",
       "Configure your assistant to use the graph first: graphify claude install (or equivalent for your assistant)"
     ]
+  },
+  "opencode": {
+    "title": "OpenCode + Deepseek Setup",
+    "steps": [
+      "Install OpenCode globally: curl -fsSL https://opencode.ai/install | bash",
+      "Verify installation: opencode --version",
+      "Start a session: opencode (then Tab to switch between Plan and Build modes)",
+      "Connect to Deepseek: /connect deepseek (paste your API key when prompted)",
+      "Optimize token usage: rtk init -g --opencode",
+      "Install Caveman plugin (optional): opencode plugin opencode-caveman -g",
+      "Run 'loma init opencode' in your project to scaffold AGENTS.md",
+      "Run 'loma optimize opencode' to configure global settings for Deepseek"
+    ]
   }
 }

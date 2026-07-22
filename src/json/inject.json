@@ -614,5 +614,152 @@
 				}
 			}
 		}
+	},
+	"opencode": {
+		"parent-title": "OPENCODE BEST PRACTICES",
+		"default-target": "AGENTS.md",
+		"plan-mode": {
+			"parent-title": "Plan Mode First",
+			"title": "Plan Mode First",
+			"body": [
+				{
+					"intro": "For any non-trivial task:"
+				},
+				{
+					"items": [
+						"Start in Plan mode (read-only) to understand and validate the approach before touching code.",
+						"Describe your understanding of the task, ask clarifying questions.",
+						"Sequence the work steps before execution.",
+						"Switch to Build mode only after the plan is validated.",
+						"Quick questions or trivial changes do not need Plan mode."
+					]
+				},
+				{
+					"note": "Plan mode avoids costly back-and-forth caused by premature execution based on misunderstanding."
+				}
+			]
+		},
+		"compact-strategy": {
+			"parent-title": "Compact Strategy",
+			"title": "Compact Strategy",
+			"body": [
+				{
+					"intro": "Keep context lean at all times:"
+				},
+				{
+					"items": [
+						"Monitor the token counter / context window percentage in the TUI.",
+						"Run /compact when context is ~50% full to summarize the session.",
+						"Compact regularly on long sessions, do not wait until saturation.",
+						"Each file read and tool output adds to context — be intentional."
+					]
+				},
+				{
+					"note": "Regular /compact reduces token consumption drastically without losing conversation continuity."
+				}
+			]
+		},
+		"mcp-discipline": {
+			"parent-title": "MCP on Demand",
+			"title": "MCP on Demand",
+			"body": [
+				{
+					"intro": "Every active MCP server registers its tools in the model context on every message:"
+				},
+				{
+					"items": [
+						"Activate only the MCP servers needed for the current task.",
+						"Deactivate them once the task is done.",
+						"A read-only doc server can stay active. A DB server should be on-demand only.",
+						"Ask: 'Would I give this tool unsupervised access to my system?' before enabling."
+					]
+				},
+				{
+					"note": "An active but unused MCP server continuously wastes tokens."
+				}
+			]
+		},
+		"sub-agents": {
+			"parent-title": "Sub-Agent Usage",
+			"title": "Sub-Agent Usage",
+			"body": [
+				{
+					"intro": "Use sub-agents to isolate context and reduce token consumption:"
+				},
+				{
+					"items": [
+						"Each sub-agent starts with a clean context — no accumulation from the main agent.",
+						"The main orchestrator stays lean, delegating details to sub-agents.",
+						"Use a read-only reviewer sub-agent to audit code without modification ability.",
+						"Define sub-agents in ~/.config/opencode/agents/ or .opencode/agents/.",
+						"Reference them via @mention in messages or auto-invocation."
+					]
+				},
+				{
+					"note": "Sub-agents prevent the main context from being polluted with thousands of lines of implementation detail."
+				}
+			]
+		},
+		"include-exclude": {
+			"parent-title": "Include/Exclude Patterns",
+			"title": "Include/Exclude Patterns",
+			"body": [
+				{
+					"intro": "Control what the agent sees to avoid ingesting irrelevant files:"
+				},
+				{
+					"items": [
+						"Exclude node_modules/, target/, dist/, *.lock, .git/.",
+						"Exclude large binary assets: images, videos, archives, WASM files.",
+						"Exclude logs, cache directories, and build artifacts.",
+						"Only include source files needed for the task.",
+						"Configure these in opencode.json or .opencodeignore."
+					]
+				},
+				{
+					"note": "Every unnecessary file ingested burns tokens with zero value."
+				}
+			]
+		},
+		"sessions": {
+			"parent-title": "One Session = One Task",
+			"title": "One Session = One Task",
+			"body": [
+				{
+					"intro": "Session discipline directly impacts token efficiency:"
+				},
+				{
+					"items": [
+						"Open a new session for each distinct task or topic.",
+						"A long session with mixed topics = cluttered context = rising costs.",
+						"Code consumes far more tokens than equivalent text — keep sessions focused.",
+						"Close and open a new session when switching subjects."
+					]
+				},
+				{
+					"note": "A clean session per task keeps context lean and relevant."
+				}
+			]
+		},
+		"custom-commands": {
+			"parent-title": "Custom Commands",
+			"title": "Custom Commands",
+			"body": [
+				{
+					"intro": "Package recurring prompts into reusable commands:"
+				},
+				{
+					"items": [
+						"Define custom commands in opencode.json to avoid retyping the same instructions.",
+						"Each command has a description and a calibrated prompt.",
+						"Example: a 'review' command that checks security, perf, error handling, test coverage.",
+						"Custom commands save tokens by replacing long repetitive prompts with short names."
+					]
+				},
+				{
+					"note": "A short, pre-calibrated prompt replaces reformulating a long instruction each session."
+				}
+			]
+		}
 	}
 }

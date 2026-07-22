@@ -1,4 +1,5 @@
 use crate::utils::display;
+use crate::utils::fs as lomaFs;
 use inquire::{MultiSelect, Select};
 use serde_json::{json, Value};
 use std::fs;
@@ -134,11 +135,32 @@ const ENV_MAPPINGS: &[EnvMapping] = &[
     },
 ];
 
+const OPENCODE_ENV_MAPPINGS: &[EnvMapping] = &[
+    EnvMapping { envKey: "LOMA_OPENCODE_MODEL", jsonPath: "model", valType: "string" },
+    EnvMapping { envKey: "LOMA_OPENCODE_MAX_TOKENS", jsonPath: "maxTokens", valType: "string" },
+    EnvMapping { envKey: "LOMA_OPENCODE_TEMPERATURE", jsonPath: "temperature", valType: "string" },
+    EnvMapping { envKey: "LOMA_OPENCODE_AUTO_COMPACT", jsonPath: "autoCompact", valType: "boolean" },
+    EnvMapping { envKey: "LOMA_OPENCODE_COMPACT_THRESHOLD", jsonPath: "compactThreshold", valType: "string" },
+    EnvMapping { envKey: "LOMA_OPENCODE_CONTEXT_LIMIT", jsonPath: "contextLimit", valType: "string" },
+    EnvMapping { envKey: "LOMA_OPENCODE_INCLUDE_PATTERNS", jsonPath: "include", valType: "string" },
+    EnvMapping { envKey: "LOMA_OPENCODE_EXCLUDE_PATTERNS", jsonPath: "exclude", valType: "string" },
+    EnvMapping { envKey: "LOMA_OPENCODE_MCP_ON_DEMAND", jsonPath: "mcpOnDemand", valType: "boolean" },
+    EnvMapping { envKey: "LOMA_OPENCODE_PLAN_FIRST", jsonPath: "planFirst", valType: "boolean" },
+    EnvMapping { envKey: "LOMA_OPENCODE_DISABLE_TELEMETRY", jsonPath: "env.OPENCODE_DISABLE_TELEMETRY", valType: "string" },
+    EnvMapping { envKey: "LOMA_OPENCODE_DISABLE_ERROR_REPORTING", jsonPath: "env.OPENCODE_DISABLE_ERROR_REPORTING", valType: "string" },
+    EnvMapping { envKey: "LOMA_OPENCODE_API_BASE_URL", jsonPath: "env.OPENCODE_API_BASE_URL", valType: "string" },
+    EnvMapping { envKey: "LOMA_OPENCODE_API_TIMEOUT_MS", jsonPath: "env.OPENCODE_API_TIMEOUT_MS", valType: "string" },
+];
+
 pub fn runOptimize(assistant: &str) -> crate::Result<()> {
     display::title(&format!("Optimize {} Configuration", assistant));
 
+    if assistant.to_lowercase() == "opencode" {
+        return runOptimizeOpenCode();
+    }
+
     if assistant.to_lowercase() != "claude" {
-        display::warn("Optimization is currently only supported for the 'claude' assistant.");
+        display::warn("Optimization is currently only supported for 'claude' and 'opencode' assistants.");
         return Ok(());
     }
 
@@ -530,6 +552,381 @@ fn setupThirdPartyToolsFlow() -> crate::Result<()> {
                 }
             }
         }
+    }
+
+    Ok(())
+}
+
+fn runOptimizeOpenCode() -> crate::Result<()> {
+    display::divider();
+    display::info("Select optimization to apply:");
+    let options = vec![
+        "1. OpenCode JSON Configuration (global)",
+        "2. Recommended Exclude Patterns",
+        "3. Third-Party Optimization Tools",
+    ];
+
+    let choice = Select::new("Choose optimization:", options)
+        .prompt()
+        .map_err(|e| crate::Error::other(e.to_string()))?;
+
+    match choice {
+        "1. OpenCode JSON Configuration (global)" => {
+            if let Err(e) = runOpenCodeJsonOptimizationFlow() {
+                display::error(&format!("JSON configuration optimization failed: {}", e));
+            }
+        }
+        "2. Recommended Exclude Patterns" => {
+            if let Err(e) = optimizeOpenCodeExcludeFile() {
+                display::error(&format!("Exclude pattern optimization failed: {}", e));
+            }
+        }
+        "3. Third-Party Optimization Tools" => {
+            if let Err(e) = setupOpenCodeThirdPartyTools() {
+                display::error(&format!("Third-party tools setup failed: {}", e));
+            }
+        }
+        _ => {}
+    }
+
+    display::success("OpenCode optimization complete.");
+    Ok(())
+}
+
+fn runOpenCodeJsonOptimizationFlow() -> crate::Result<()> {
+    display::step("OpenCode Global Configuration Optimizations");
+    display::info("Loading default configuration variables...");
+
+    let embeddedEnv = include_str!("../json/loma_opencode_defaults.json");
+    let sections: Value = serde_json::from_str(embeddedEnv).unwrap_or(json!([]));
+    let Some(sectionsArray) = sections.as_array() else {
+        return Err(crate::Error::other("Failed to parse embedded defaults."));
+    };
+
+    let mut options = Vec::new();
+    for sec in sectionsArray {
+        if let Some(title) = sec["section"].as_str() {
+            let singleLineTitle = title.split('\n').next().unwrap_or(title);
+            options.push(singleLineTitle.to_string());
+        }
+    }
+
+    let selected = MultiSelect::new(
+        "Select categories to apply/merge to OpenCode global config:",
+        options,
+    )
+    .with_help_message("Space to select, Enter to confirm, Arrow keys to navigate")
+    .prompt()
+    .map_err(|e| crate::Error::other(e.to_string()))?;
+
+    if selected.is_empty() {
+        display::info("No categories selected.");
+        return Ok(());
+    }
+
+    let configDir = lomaFs::getAssistantGlobalDir("opencode")
+        .ok_or_else(|| crate::Error::other("Cannot resolve home directory"))?;
+    fs::create_dir_all(&configDir)?;
+    let targetPath = configDir.join("opencode.json");
+
+    for sec in sectionsArray {
+        let title = sec["section"].as_str().unwrap_or("");
+        let singleLineTitle = title.split('\n').next().unwrap_or(title);
+
+        if selected.contains(&singleLineTitle.to_string()) {
+            display::step(&format!(
+                "Applying '{}' settings to {}",
+                singleLineTitle,
+                targetPath.display()
+            ));
+
+            if let Some(vars) = sec["vars"].as_array() {
+                for var in vars {
+                    let key = var["key"].as_str().unwrap_or("");
+                    let defaultValue = var["value"].as_str().unwrap_or("");
+                    let activeValue =
+                        std::env::var(key).unwrap_or_else(|_| defaultValue.to_string());
+
+                    if let Some(mapping) = OPENCODE_ENV_MAPPINGS.iter().find(|m| m.envKey == key) {
+                        applyMappingToFile(&targetPath, mapping, &activeValue)?;
+                        display::success(&format!("Mapped {} = '{}'", key, activeValue));
+                    }
+                }
+            }
+        }
+    }
+
+    display::success(&format!(
+        "Configuration written to {}",
+        targetPath.display()
+    ));
+
+    Ok(())
+}
+
+fn optimizeOpenCodeExcludeFile() -> crate::Result<()> {
+    let excludePath = if let Some(globalDir) = lomaFs::getAssistantGlobalDir("opencode") {
+        globalDir.join(".opencodeignore")
+    } else {
+        PathBuf::from(".opencodeignore")
+    };
+
+    let recommendedLines = vec![
+        "# Dependencies",
+        "node_modules/",
+        "vendor/",
+        ".venv/",
+        "venv/",
+        "env/",
+        "__pycache__/",
+        "*.pyc",
+        "",
+        "# Builds & Artifacts",
+        "dist/",
+        "build/",
+        "out/",
+        "target/",
+        ".next/",
+        "",
+        "# Version Control",
+        ".git/",
+        ".svn/",
+        "",
+        "# Lock Files",
+        "package-lock.json",
+        "yarn.lock",
+        "pnpm-lock.yaml",
+        "bun.lockb",
+        "Cargo.lock",
+        "",
+        "# Binary Assets & Media",
+        "*.jpg",
+        "*.jpeg",
+        "*.png",
+        "*.gif",
+        "*.webp",
+        "*.svg",
+        "*.ico",
+        "*.pdf",
+        "*.zip",
+        "*.tar.gz",
+        "*.wasm",
+        "",
+        "# IDE & OS files",
+        ".DS_Store",
+        "Thumbs.db",
+        ".idea/",
+        ".vscode/",
+        "*.swp",
+        "",
+        "# Logs & Temporary Files",
+        "*.log",
+        "logs/",
+        "tmp/",
+        "temp/",
+        ".cache/",
+        ".loma/",
+        "",
+        "# Large Generated Files",
+        "*.min.js",
+        "*.min.css",
+        "*.map",
+    ];
+
+    let mut addedPatterns = Vec::new();
+    let existingContent = if excludePath.exists() {
+        fs::read_to_string(&excludePath)?
+    } else {
+        String::new()
+    };
+    let existingLines: Vec<String> = existingContent
+        .lines()
+        .map(|s| s.trim().to_string())
+        .collect();
+
+    for line in &recommendedLines {
+        let trimmed = line.trim().to_string();
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        if !existingLines.contains(&trimmed) {
+            addedPatterns.push(trimmed);
+        }
+    }
+
+    if addedPatterns.is_empty() {
+        display::info(&format!(
+            "{} already contains all recommended patterns.",
+            excludePath.display()
+        ));
+    } else {
+        display::step(&format!(
+            "Updating {} with missing patterns...",
+            excludePath.display()
+        ));
+        if let Some(parent) = excludePath.parent() {
+            fs::create_dir_all(parent)?;
+        }
+        let mut fileContent = existingContent;
+        if !fileContent.ends_with('\n') && !fileContent.is_empty() {
+            fileContent.push('\n');
+        }
+        for pattern in &addedPatterns {
+            fileContent.push_str(pattern);
+            fileContent.push('\n');
+            display::success(&format!(
+                "Added pattern to {}: {}",
+                excludePath.display(),
+                pattern
+            ));
+        }
+        fs::write(&excludePath, fileContent)?;
+        display::success(&format!("Successfully updated {}.", excludePath.display()));
+    }
+
+    Ok(())
+}
+
+fn setupOpenCodeThirdPartyTools() -> crate::Result<()> {
+    display::step("Third-Party Optimization Tools Setup");
+
+    let options = vec![
+        "RTK (Rust Token Kill) with OpenCode preset",
+        "Caveman (OpenCode Plugin)",
+        "Token Optimizer (Plugin)",
+        "Code Review Graph",
+        "Graphify",
+    ];
+
+    let selected = MultiSelect::new("Choose tools to install/configure:", options)
+        .prompt()
+        .map_err(|e| crate::Error::other(e.to_string()))?;
+
+    let mut installed_tools = Vec::new();
+
+    for tool in selected {
+        match tool {
+            "RTK (Rust Token Kill) with OpenCode preset" => {
+                display::step("Installing RTK with OpenCode preset...");
+                let home = std::env::var("HOME").unwrap_or_default();
+                let local_bin = if home.is_empty() {
+                    "/usr/local/bin".to_string()
+                } else {
+                    format!("{}/.local/bin", home)
+                };
+                let _ = fs::create_dir_all(&local_bin);
+                let status = Command::new("sh")
+                    .env("RTK_INSTALL_DIR", &local_bin)
+                    .args(["-c", "curl -fsSL https://raw.githubusercontent.com/rtk-ai/rtk/refs/heads/master/install.sh | sh"])
+                    .status()?;
+                if status.success() {
+                    display::success("RTK installed successfully!");
+                    // Initialize with OpenCode preset
+                    if lomaFs::cmdExists("rtk") {
+                        let initStatus = Command::new("rtk")
+                            .args(["init", "-g", "--opencode"])
+                            .status();
+                        if let Ok(s) = initStatus {
+                            if s.success() {
+                                display::success("RTK initialized with OpenCode preset.");
+                            }
+                        }
+                    }
+                    installed_tools.push("rtk");
+                } else {
+                    display::error("Failed to install RTK");
+                }
+            }
+            "Caveman (OpenCode Plugin)" => {
+                display::step("Installing Caveman OpenCode plugin...");
+                let status = Command::new("opencode")
+                    .args(["plugin", "opencode-caveman", "-g"])
+                    .status();
+                if let Ok(s) = status {
+                    if s.success() {
+                        display::success("Caveman plugin installed successfully for OpenCode.");
+                        installed_tools.push("caveman");
+                    } else {
+                        display::error("Failed to install Caveman plugin.");
+                    }
+                } else {
+                    display::warn("OpenCode not found in PATH. Install opencode first.");
+                }
+            }
+            "Token Optimizer (Plugin)" => {
+                display::info("To install Token Optimizer:");
+                display::info("  See https://github.com/alexgreensh/token-optimizer");
+                installed_tools.push("token_optimizer");
+            }
+            "Code Review Graph" | "Graphify" => {
+                display::step(&format!("Installing {} globally...", tool));
+                let pkg = if tool == "Code Review Graph" {
+                    "code-review-graph"
+                } else {
+                    "graphifyy"
+                };
+
+                let mut status = Command::new("pip3")
+                    .args(["install", "--user", pkg])
+                    .status();
+
+                if status.is_err() || !status.as_ref().unwrap().success() {
+                    status = Command::new("pip")
+                        .args(["install", "--user", pkg])
+                        .status();
+                }
+
+                if let Ok(ref s) = status {
+                    if !s.success() {
+                        let _ = Command::new("pip3")
+                            .args(["install", "--user", "--break-system-packages", pkg])
+                            .status();
+                        status = Command::new("pip")
+                            .args(["install", "--user", "--break-system-packages", pkg])
+                            .status();
+                    }
+                }
+
+                let success = status.map(|s| s.success()).unwrap_or(false);
+                if success {
+                    display::success(&format!("{} installed successfully globally", tool));
+                    if tool == "Code Review Graph" {
+                        installed_tools.push("code_review_graph");
+                    } else {
+                        installed_tools.push("graphify");
+                    }
+                } else {
+                    display::error(&format!("Failed to install {}", tool));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    if !installed_tools.is_empty() {
+        display::divider();
+        display::step("Recommended Manual Setup Steps:");
+        let tutorials_val: Value = serde_json::from_str(include_str!("../json/tutorials.json"))
+            .unwrap_or_else(|_| json!({}));
+        for key in installed_tools {
+            if let Some(tut) = tutorials_val.get(key) {
+                if let Some(title) = tut["title"].as_str() {
+                    println!("\n\x1b[35;1m✦ {} ✦\x1b[0m", title);
+                }
+                if let Some(steps) = tut["steps"].as_array() {
+                    for (idx, step) in steps.iter().enumerate() {
+                        if let Some(step_str) = step.as_str() {
+                            println!("  \x1b[32m{}.\x1b[0m {}", idx + 1, step_str);
+                        }
+                    }
+                }
+            }
+        }
+
+        display::info("For OpenCode-specific setup:");
+        println!("  1. Connect to Deepseek: in opencode session, run /connect deepseek");
+        println!("  2. Verify RTK: rtk check");
+        println!("  3. Caveman: use /caveman in your opencode session");
     }
 
     Ok(())
